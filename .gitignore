@@ -1,0 +1,26 @@
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.pyc
+
+# Environment variables and secrets
+.env
+credentials.json
+client_secret*.json
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# Test PDFs
+test_cvs/

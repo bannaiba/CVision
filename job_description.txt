@@ -1,0 +1,29 @@
+Senior Software Engineer — AI/ML Platform
+
+We are looking for a skilled Senior Software Engineer with a strong background in machine learning, data engineering, and backend development to join our AI Platform team.
+
+Responsibilities:
+- Design, build, and maintain scalable ML pipelines and data infrastructure
+- Develop RESTful APIs and microservices using Python (FastAPI / Flask / Django)
+- Collaborate with data scientists to productionize ML models
+- Implement CI/CD workflows, containerization (Docker/Kubernetes), and cloud deployments (AWS/GCP/Azure)
+- Optimize data processing workflows using Apache Spark, Kafka, or Airflow
+- Write clean, testable, and well-documented code following best engineering practices
+- Participate in code reviews, architecture discussions, and sprint planning
+
+Requirements:
+- Bachelor's or Master's degree in Computer Science, Software Engineering, or a related field
+- 3+ years of professional software engineering experience
+- Proficiency in Python; familiarity with Java, Go, or Scala is a plus
+- Hands-on experience with ML frameworks: PyTorch, TensorFlow, scikit-learn, or HuggingFace
+- Experience with NLP, LLMs, or computer vision is highly desirable
+- Strong knowledge of SQL and NoSQL databases (PostgreSQL, MongoDB, Redis)
+- Familiarity with cloud platforms (AWS, GCP, or Azure) and DevOps practices
+- Experience with Docker, Kubernetes, and infrastructure-as-code (Terraform)
+- CGPA of 3.0/4.0 or higher preferred
+- Strong problem-solving skills and ability to work in a fast-paced Agile environment
+
+Nice to Have:
+- Experience with LangChain, vector databases (Pinecone, Qdrant), or RAG pipelines
+- Open-source contributions or a strong GitHub portfolio
+- Familiarity with MLOps tools: MLflow, Weights & Biases, or similar

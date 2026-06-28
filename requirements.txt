@@ -1,0 +1,46 @@
+# =============================================================================
+# CVision — Agentic Resume Screening Framework
+# Phase 1 Requirements: Google Form → BERT Ranking Pipeline
+#
+# Install with:
+#     pip install -r requirements.txt
+#
+# Notes:
+#   - sentence-transformers downloads ~80MB model on first run (cached afterward)
+#   - pdfplumber requires no C++ build step — pure Python wheel on Windows
+#   - Google API packages are optional if using Upload PDFs mode only
+# =============================================================================
+
+# ── Core Web Framework ────────────────────────────────────────────────────────
+streamlit>=1.35.0
+
+# ── Data Manipulation ─────────────────────────────────────────────────────────
+# ── Semantic Embeddings ───────────────────────────────────────────────────────
+# fastembed: ONNX-based embeddings — NO PyTorch required (Fixes WinError 1114)
+# Downloads ~85MB ONNX model on first run; cached in ~/.cache/fastembed
+fastembed>=0.4.0
+# Fallback: TF-IDF pure Python baseline
+scikit-learn>=1.4.0
+
+# ── PDF Text Extraction ───────────────────────────────────────────────────────
+pdfplumber>=0.11.0        # Primary: layout-aware, char-level bounding boxes
+pypdf>=4.0.0              # Fallback: simple flat text extraction
+
+# ── Google APIs (Sheets + Drive integration) ──────────────────────────────────
+# Optional: only needed for Google Sheet mode. Safe to skip for Upload mode.
+gspread>=6.0.0
+google-auth>=2.28.0
+google-api-python-client>=2.100.0
+
+# ── Visualization ─────────────────────────────────────────────────────────────
+plotly>=5.20.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0      # Load secrets from .env file
+requests>=2.31.0          # HTTP for Google Drive PDF downloads
+
+# =============================================================================
+# Phase 2 dependencies — LLM Chatbot + Email Automation
+# =============================================================================
+google-genai>=1.0.0                   # Gemini LLM API (new SDK) for HR chatbot
+apscheduler>=3.10.0              # Scheduled pipeline execution
