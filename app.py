@@ -1316,15 +1316,31 @@ def _run_pipeline_upload_mode(
         st.error("No readable PDFs found. Please check your files and try again.")
         st.stop()
 
-    # Build minimal CandidateRecord objects (no form data — just filename)
-    candidates = [
-        CandidateRecord(
-            name=Path(fn).stem.replace("_", " ").replace("-", " ").title(),
-            email="",
+    # Build CandidateRecord objects enriched with auto-extracted metadata
+    candidates = []
+    candidate_metadata = []
+    for fn, md in zip(filenames, resume_markdowns):
+        meta = extract_candidate_metadata(md)   # email, phone, linkedin, github, portfolio, cgpa
+        display_name = Path(fn).stem.replace("_", " ").replace("-", " ").title()
+        rec = CandidateRecord(
+            name=display_name,
+            email=meta.get("email", ""),
+            phone=meta.get("phone", ""),
+            linkedin_url=meta.get("linkedin", ""),
+            cgpa=meta.get("cgpa", -1.0),           # extracted from CV text
             resume_markdown=md,
         )
-        for fn, md in zip(filenames, resume_markdowns)
-    ]
+        # Stash github + portfolio in job_title / cover_note (spare string fields)
+        rec.job_title  = meta.get("github", "")
+        rec.cover_note = meta.get("portfolio", "")
+        candidates.append(rec)
+        candidate_metadata.append({
+            "name":      display_name,
+            "email":     rec.email,
+            "cgpa":      rec.cgpa,
+            "years_exp": rec.years_exp,  # -1.0 = not found
+            "degree":    rec.degree,
+        })
 
     with st.spinner("🧠 Running BERT semantic ranking..."):
         results_df = rank_resumes_semantic(
@@ -1332,8 +1348,7 @@ def _run_pipeline_upload_mode(
             filenames=filenames,
             resume_markdowns=resume_markdowns,
             model=model,
-            # No structured metadata in upload mode
-            candidate_metadata=None,
+            candidate_metadata=candidate_metadata,
         )
 
     stats = compute_summary_stats(results_df)
