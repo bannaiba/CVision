@@ -61,6 +61,17 @@ from modules.embedding import (
     ACTIVE_BACKEND,
 )
 from modules.chatbot import build_system_prompt, chat_with_assistant
+import os
+import pickle
+import json
+
+from modules.scheduler_task import get_scheduler, update_scheduler_job
+from modules.pipeline_core import run_headless_sheet_pipeline
+
+CACHE_FILE = ".pipeline_cache.pkl"
+CONFIG_FILE = "scheduler_config.json"
+
+
 from modules.email_dispatch import (
     send_filter_rejection_emails,
     send_final_decision_emails,
@@ -104,6 +115,12 @@ def _get_model(model_name: str = "all-MiniLM-L6-v2"):
         Loaded SentenceTransformer instance.
     """
     return load_embedding_model(model_name)
+
+@st.cache_resource(show_spinner=False)
+def _init_scheduler():
+    return get_scheduler()
+
+_scheduler = _init_scheduler()
 
 
 # ── CSS Injection ──────────────────────────────────────────────────────────────
@@ -1154,6 +1171,30 @@ def _render_scheduling() -> None:
                 unsafe_allow_html=True,
             )
 
+    # Hook up scheduler
+    time_str = schedule_time.strftime("%H:%M") if schedule_time else ""
+    update_scheduler_job(_scheduler, time_str, schedule_enabled)
+
+    st.markdown("### 💾 Configuration")
+    st.caption("Save your current Job Description and Filters so the automated scheduler knows what to run.")
+    
+    if st.button("Save Current Configuration for Scheduler", use_container_width=True):
+        if "job_description" not in st.session_state or not st.session_state["job_description"].strip():
+            st.error("⚠️ Please paste and run a Job Description at least once before saving config.")
+        else:
+            config = {
+                "job_description": st.session_state.get("job_description", ""),
+                "sheet_id": st.session_state.get("sheet_id", ""),
+                "credentials_path": "credentials.json",
+                "min_cgpa": st.session_state.get("min_cgpa", 0.0),
+                "min_years_exp": st.session_state.get("min_years_exp", 0.0),
+                "model_name": "all-MiniLM-L6-v2",
+                "auto_email": st.session_state.get("auto_email", False)
+            }
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f, indent=4)
+            st.success(f"✅ Configuration saved to {CONFIG_FILE}. The scheduler will use these settings.")
+
     # Store schedule state
     if schedule_enabled and schedule_time:
         st.session_state["scheduled_time"] = schedule_time
@@ -1362,7 +1403,15 @@ def _run_pipeline_sheet_mode(
     min_cgpa: float,
     min_years_exp: float,
     model,
-) -> tuple[pd.DataFrame, dict, list[CandidateRecord], list[CandidateRecord]]:
+) -> tuple[pd.DataFrame, dict, list, list]:
+    with st.spinner("🤖 Running Automated Pipeline..."):
+        try:
+            return run_headless_sheet_pipeline(jd, sheet_id, credentials_path, min_cgpa, min_years_exp, model)
+        except Exception as e:
+            st.error(f"Pipeline Error: {e}")
+            st.stop()
+            
+def _old_sheet_mode_discarded():
     """
     Execute the full pipeline in Google Sheet Mode.
 
@@ -1605,6 +1654,10 @@ def main() -> None:
             )
         else:
             st.success(f"🔗 Connected to Sheet: `{config['sheet_id'][:20]}...`")
+        
+        st.session_state["sheet_id"] = config["sheet_id"]
+        st.session_state["min_cgpa"] = config["min_cgpa"]
+        st.session_state["min_years_exp"] = config["min_years_exp"]
 
     st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
 
@@ -1615,6 +1668,13 @@ def main() -> None:
         <span class='step-title'>Run Pipeline</span>
     </div>
     """, unsafe_allow_html=True)
+
+    auto_email = st.toggle(
+        "Auto-send filter rejections on completion",
+        value=st.session_state.get("auto_email", False),
+        help="If enabled, candidates who fail hard filters will immediately receive a rejection email when the pipeline finishes.",
+    )
+    st.session_state["auto_email"] = auto_email
 
     analyze_btn = st.button(
         "🚀 Analyze & Rank Candidates",
@@ -1680,6 +1740,30 @@ def main() -> None:
         st.session_state["candidates"] = candidates
         st.session_state["filtered"]   = filtered
         st.session_state["job_description"] = job_description
+
+        # Save to disk cache for persistence across full browser reloads
+        try:
+            with open(CACHE_FILE, "wb") as f:
+                pickle.dump({
+                    "results_df": results_df,
+                    "stats": stats,
+                    "candidates": candidates,
+                    "filtered": filtered,
+                    "job_description": job_description,
+                }, f)
+        except Exception as e:
+            pass
+
+        # Auto-send filter rejection emails if toggled
+        if auto_email and filtered:
+            with st.spinner("📧 Auto-sending filter rejection emails..."):
+                send_filter_rejection_emails(
+                    filtered_candidates=filtered,
+                    position="the open position",
+                    company_name="Our Organization",
+                    dry_run=False,
+                )
+            st.toast("✅ Auto-sent filter rejection emails!")
 
     # ── Results Section (shown if analysis has been run) ──────────────────────
     if "results_df" in st.session_state:
