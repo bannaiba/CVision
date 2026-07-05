@@ -151,10 +151,14 @@ def send_email(
     # Use Google Apps Script Webhook on Render to bypass SMTP port blocking
     webhook_url = "https://script.google.com/macros/s/AKfycbzuyIUbmsPItQNPloz--W5kEtWWb5eOeSl5Ugu0ceJ2OHVHUL2wn8Gbf8Uj6x9KrK7Z/exec"
     
+    
+    # Convert plain text to HTML paragraphs to fix spacing issues in Gmail
+    html_body = "<p>" + body.replace("\n\n", "</p><p>").replace("\n", "<br>") + "</p>"
+    
     payload = {
         "to": to_email,
         "subject": subject,
-        "body": body,
+        "body": html_body,
         "company_name": "CVision Recruitment"
     }
 
