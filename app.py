@@ -1577,6 +1577,21 @@ def main() -> None:
     → pipeline execution → results dashboard. All state is managed via
     ``st.session_state`` so results persist across Streamlit reruns.
     """
+    if "results_df" not in st.session_state and Path(CACHE_FILE).exists():
+        try:
+            import pickle
+            with open(CACHE_FILE, "rb") as f:
+                cache_data = pickle.load(f)
+            st.session_state["results_df"] = cache_data["results_df"]
+            st.session_state["stats"] = cache_data["stats"]
+            st.session_state["candidates"] = cache_data["candidates"]
+            st.session_state["filtered"] = cache_data["filtered"]
+            st.session_state["job_description"] = cache_data["job_description"]
+            run_time = cache_data.get("last_run", "").split(".")[0].replace("T", " ")
+            st.toast(f"Loaded background run from {run_time}", icon="🔄")
+        except Exception:
+            pass
+
     _inject_css()
 
     # ── Sidebar ────────────────────────────────────────────────────────────────
