@@ -1148,10 +1148,23 @@ def _render_scheduling() -> None:
 
     sched_col1, sched_col2, sched_col3 = st.columns([2, 2, 1])
 
+    # Load defaults from config if present
+    from modules.scheduler_task import _load_scheduler_config
+    from datetime import datetime
+    sched_cfg = _load_scheduler_config() or {}
+    default_enabled = sched_cfg.get("schedule_enabled", False)
+    default_time_str = sched_cfg.get("schedule_time", "")
+    default_time = None
+    if default_time_str:
+        try:
+            default_time = datetime.strptime(default_time_str, "%H:%M").time()
+        except:
+            pass
+
     with sched_col1:
         schedule_time = st.time_input(
             "Scheduled Run Time",
-            value=None,
+            value=default_time,
             key="schedule_time",
             help="The pipeline will automatically run at this time daily.",
         )
@@ -1159,7 +1172,7 @@ def _render_scheduling() -> None:
     with sched_col2:
         schedule_enabled = st.toggle(
             "Enable Daily Schedule",
-            value=False,
+            value=default_enabled,
             key="schedule_enabled",
             help="Turn on to automatically run the pipeline at the scheduled time.",
         )
