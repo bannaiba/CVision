@@ -100,6 +100,6 @@ def run_headless_sheet_pipeline(
         stats = compute_summary_stats(results_df)
     else:
         results_df = pd.DataFrame()
-        stats = {"n_candidates": 0, "top_score": 0.0, "avg_score": 0.0, "low_score": 0.0}
+        stats = compute_summary_stats(results_df)
 
     return results_df, stats, downloaded, filtered
