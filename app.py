@@ -605,6 +605,9 @@ def _render_score_chart(results_df: pd.DataFrame) -> None:
     Args:
         results_df: Ranked DataFrame from ``rank_resumes_semantic()``.
     """
+    if results_df.empty:
+        return
+
     # Reverse for bottom-to-top display (highest score at top)
     df_plot = results_df.sort_values("Fit Score (%)", ascending=True)
 
