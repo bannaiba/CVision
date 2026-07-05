@@ -146,7 +146,7 @@ def get_scheduler() -> BackgroundScheduler:
         time_str = config["schedule_time"]
         try:
             hour, minute = map(int, time_str.split(":"))
-            trigger = CronTrigger(hour=hour, minute=minute)
+            trigger = CronTrigger(hour=hour, minute=minute, timezone="Asia/Dhaka")
             scheduler.add_job(
                 _scheduler_job, trigger=trigger,
                 id="daily_pipeline_run", replace_existing=True
@@ -171,7 +171,7 @@ def update_scheduler_job(scheduler: BackgroundScheduler, time_str: str, enabled:
 
     if enabled and time_str:
         hour, minute = map(int, time_str.split(":"))
-        trigger = CronTrigger(hour=hour, minute=minute)
+        trigger = CronTrigger(hour=hour, minute=minute, timezone="Asia/Dhaka")
         scheduler.add_job(_scheduler_job, trigger=trigger, id=job_id, replace_existing=True)
         logger.info(f"Scheduled pipeline to run daily at {hour:02d}:{minute:02d} UTC")
     else:
