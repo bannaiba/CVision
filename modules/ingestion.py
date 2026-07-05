@@ -569,13 +569,20 @@ def download_resume_from_drive(
     dest_path = dest_dir / f"{safe_name}.pdf"
 
     # ── Method 1: Authenticated Drive API ────────────────────────────────────
-    if credentials_path and Path(credentials_path).exists():
+    resolved_path = None
+    if credentials_path:
+        try:
+            resolved_path = resolve_credentials_path(credentials_path)
+        except FileNotFoundError:
+            pass
+
+    if resolved_path:
         try:
             logger.info(
                 "Attempting authenticated Drive download for '%s' (file_id=%s)...",
                 candidate_name, file_id,
             )
-            return _download_via_drive_api(file_id, dest_path, credentials_path)
+            return _download_via_drive_api(file_id, dest_path, resolved_path)
         except Exception as exc:
             logger.warning(
                 "Drive API download failed for '%s': %s — falling back to public URL.",
