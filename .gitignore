@@ -24,3 +24,7 @@ Thumbs.db
 
 # Test PDFs
 test_cvs/
+
+# Pipeline cache and scheduler config
+.pipeline_cache.pkl
+scheduler_config.json
