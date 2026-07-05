@@ -38,9 +38,11 @@ Service Account setup walkthrough.
 from __future__ import annotations
 
 import io
+import json
 import logging
 import os
 import re
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -53,6 +55,56 @@ from dotenv import load_dotenv
 load_dotenv()  # Load .env file if present (no-op if absent)
 
 logger = logging.getLogger(__name__)
+
+# ── Credentials Resolution ────────────────────────────────────────────────────
+
+_CACHED_CREDENTIALS_PATH: Optional[str] = None
+
+def resolve_credentials_path(credentials_path: str = "credentials.json") -> str:
+    """
+    Resolve the Google Service Account credentials to a file path.
+
+    Priority:
+    1. If ``credentials_path`` points to an existing file, use it directly.
+    2. If the env var ``GOOGLE_CREDENTIALS_JSON`` contains the raw JSON string,
+       write it to a temporary file and return that path. This is the recommended
+       approach for cloud platforms like Render where you cannot deploy files.
+    3. Raise FileNotFoundError if neither source is available.
+    """
+    global _CACHED_CREDENTIALS_PATH
+
+    # 1. Check if the file already exists on disk (local dev)
+    if Path(credentials_path).exists():
+        return credentials_path
+
+    # 2. Check if we already wrote a temp file in a previous call
+    if _CACHED_CREDENTIALS_PATH and Path(_CACHED_CREDENTIALS_PATH).exists():
+        return _CACHED_CREDENTIALS_PATH
+
+    # 3. Try to load from environment variable
+    raw_json = os.getenv("GOOGLE_CREDENTIALS_JSON", "").strip()
+    if raw_json:
+        try:
+            # Validate that it's proper JSON
+            json.loads(raw_json)
+            # Write to a temp file that persists for the process lifetime
+            tmp = tempfile.NamedTemporaryFile(
+                mode="w", suffix=".json", prefix="gcp_creds_", delete=False
+            )
+            tmp.write(raw_json)
+            tmp.close()
+            _CACHED_CREDENTIALS_PATH = tmp.name
+            logger.info("Loaded Google credentials from GOOGLE_CREDENTIALS_JSON env var.")
+            return _CACHED_CREDENTIALS_PATH
+        except json.JSONDecodeError:
+            logger.error("GOOGLE_CREDENTIALS_JSON env var contains invalid JSON.")
+
+    raise FileNotFoundError(
+        f"Credentials file not found: {credentials_path}\n"
+        "Either place credentials.json in the project folder, or set the "
+        "GOOGLE_CREDENTIALS_JSON environment variable with the raw JSON content.\n"
+        "See GOOGLE_FORM_SPEC.md for Service Account setup instructions."
+    )
 
 # ── Knockout Filter Defaults ──────────────────────────────────────────────────
 
@@ -222,18 +274,14 @@ def _get_gspread_client(credentials_path: str):
             "Run: pip install gspread google-auth google-api-python-client"
         ) from exc
 
-    if not Path(credentials_path).exists():
-        raise FileNotFoundError(
-            f"Credentials file not found: {credentials_path}\n"
-            "See GOOGLE_FORM_SPEC.md for Service Account setup instructions."
-        )
+    resolved_path = resolve_credentials_path(credentials_path)
 
     # Request only the minimum necessary scopes (principle of least privilege)
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets.readonly",
         "https://www.googleapis.com/auth/drive.readonly",
     ]
-    creds = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+    creds = Credentials.from_service_account_file(resolved_path, scopes=scopes)
     client = gspread.authorize(creds)
     logger.debug("gspread authenticated successfully with service account.")
     return client
@@ -614,8 +662,9 @@ def _download_via_drive_api(
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaIoBaseDownload
 
+    resolved_path = resolve_credentials_path(credentials_path)
     scopes = ["https://www.googleapis.com/auth/drive.readonly"]
-    creds = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+    creds = Credentials.from_service_account_file(resolved_path, scopes=scopes)
 
     # cache_discovery=False avoids a deprecation warning in newer library versions
     service = build("drive", "v3", credentials=creds, cache_discovery=False)
