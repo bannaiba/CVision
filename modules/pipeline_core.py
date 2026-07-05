@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 import pandas as pd
+from typing import Callable, Optional
 
 from modules.ingestion import (
     CandidateRecord,
@@ -22,18 +23,21 @@ def run_headless_sheet_pipeline(
     min_cgpa: float,
     min_years_exp: float,
     model,
+    progress_callback: Optional[Callable[[str], None]] = None,
 ) -> tuple[pd.DataFrame, dict, list[CandidateRecord], list[CandidateRecord]]:
     """
     Headless version of the Google Sheet pipeline.
     Suitable for execution in background threads (e.g. apscheduler).
     Raises exceptions on failure instead of using Streamlit UI calls.
     """
+    if progress_callback: progress_callback("📊 Fetching candidates from Google Sheet...")
     logger.info("Fetching candidates from Google Sheet...")
     all_candidates = fetch_candidates_from_sheet(sheet_id, credentials_path)
     
     if not all_candidates:
         raise ValueError("No candidate submissions found in the Google Sheet.")
 
+    if progress_callback: progress_callback("🚫 Applying knockout filters...")
     logger.info("Applying knockout filters...")
     apply_knockout_filters(all_candidates, min_cgpa=min_cgpa, min_years_exp=min_years_exp)
 
@@ -44,6 +48,7 @@ def run_headless_sheet_pipeline(
         logger.warning("All candidates were filtered out.")
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="cvision_"))
+    if progress_callback: progress_callback("📥 Downloading resumes from Google Drive...")
     logger.info("Downloading resumes from Google Drive...")
     
     if passed:
@@ -63,6 +68,7 @@ def run_headless_sheet_pipeline(
     if passed and not downloaded:
         raise RuntimeError("No resumes could be downloaded. Check Drive permissions.")
 
+    if progress_callback: progress_callback("📄 Extracting text from resumes...")
     logger.info("Extracting text from resumes...")
     filenames:        list[str] = []
     resume_markdowns: list[str] = []
@@ -88,6 +94,7 @@ def run_headless_sheet_pipeline(
     if downloaded and not filenames:
         raise RuntimeError("Text extraction failed for all downloaded resumes.")
 
+    if progress_callback: progress_callback("🧠 Running BERT semantic ranking...")
     logger.info("Running BERT semantic ranking...")
     if filenames:
         results_df = rank_resumes_semantic(

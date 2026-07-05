@@ -1421,10 +1421,19 @@ def _run_pipeline_sheet_mode(
     min_years_exp: float,
     model,
 ) -> tuple[pd.DataFrame, dict, list, list]:
-    with st.spinner("🤖 Running Automated Pipeline..."):
+    with st.status("🚀 Running Automated Pipeline...", expanded=True) as status:
         try:
-            return run_headless_sheet_pipeline(jd, sheet_id, credentials_path, min_cgpa, min_years_exp, model)
+            def update_status(msg: str):
+                status.update(label=msg, state="running")
+            
+            res = run_headless_sheet_pipeline(
+                jd, sheet_id, credentials_path, min_cgpa, min_years_exp, model,
+                progress_callback=update_status
+            )
+            status.update(label="✅ Pipeline Completed Successfully!", state="complete", expanded=False)
+            return res
         except Exception as e:
+            status.update(label="❌ Pipeline Failed", state="error", expanded=True)
             st.error(f"Pipeline Error: {e}")
             st.stop()
             
