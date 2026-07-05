@@ -682,6 +682,8 @@ def _render_ranked_table(results_df: pd.DataFrame) -> None:
     Args:
         results_df: Ranked DataFrame from ``rank_resumes_semantic()``.
     """
+    if results_df.empty:
+        return
 
     def _color_score(val: float) -> str:
         """Return a CSS color string for a given score value."""
