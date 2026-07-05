@@ -147,6 +147,14 @@ def _inject_css() -> None:
         background: linear-gradient(135deg, #0a0d18 0%, #10132a 50%, #0a0d18 100%);
     }
 
+        /* Disable the generic grey-out during script execution */
+    [data-testid="stAppViewContainer"] > .block-container {
+        opacity: 1 !important;
+    }
+    div[data-testid="stToolbar"] {
+        display: none !important;
+    }
+
     /* ── Sidebar ─────────────────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
         background: rgba(10, 13, 24, 0.97) !important;
