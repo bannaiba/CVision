@@ -143,14 +143,14 @@ COLUMN_MAP: dict[str, str] = {
     "name":       "Full Name",
     "email":      "Email Address",
     "phone":      "Phone Number",
-    "cgpa":       "CGPA / GPA",
+    "cgpa":       "CGPA/GPA",
     "degree":     "Highest Degree Earned",
-    "major":      "Major / Field of Study",
+    "major":      "Major/Field of Study",
     "years_exp":  "Years of Professional Experience",
     "job_title":  "Current or Last Job Title",
     "linkedin":   "LinkedIn Profile URL",
     "position":   "Position Applying For",
-    "resume_url": "Upload Resume / CV",
+    "resume_url": "Upload Resume/CV",
     "cover_note": "Brief Cover Note",
 }
 
