@@ -1192,12 +1192,13 @@ def _render_scheduling() -> None:
     st.caption("Save your current Job Description and Filters so the automated scheduler knows what to run.")
     
     if st.button("💾 Save Current Configuration for Scheduler", use_container_width=True):
-        if "job_description" not in st.session_state or not st.session_state["job_description"].strip():
-            st.error("⚠️ Please paste and run a Job Description at least once before saving config.")
+        jd_val = st.session_state.get("jd_input", "")
+        if not jd_val.strip():
+            st.error("⚠️ Please paste a Job Description in the main panel before saving config.")
         else:
             config = {
-                "job_description": st.session_state.get("job_description", ""),
-                "sheet_id": st.session_state.get("sheet_id", ""),
+                "job_description": jd_val.strip(),
+                "sheet_id": st.session_state.get("sheet_id_input", st.session_state.get("sheet_id", "")),
                 "credentials_path": "credentials.json",
                 "min_cgpa": st.session_state.get("min_cgpa", 0.0),
                 "min_years_exp": st.session_state.get("min_years_exp", 0.0),
