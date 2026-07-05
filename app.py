@@ -65,7 +65,7 @@ import os
 import pickle
 import json
 
-from modules.scheduler_task import get_scheduler, update_scheduler_job
+from modules.scheduler_task import get_scheduler, update_scheduler_job, save_scheduler_config
 from modules.pipeline_core import run_headless_sheet_pipeline
 
 CACHE_FILE = ".pipeline_cache.pkl"
@@ -1178,7 +1178,7 @@ def _render_scheduling() -> None:
     st.markdown("### 💾 Configuration")
     st.caption("Save your current Job Description and Filters so the automated scheduler knows what to run.")
     
-    if st.button("Save Current Configuration for Scheduler", use_container_width=True):
+    if st.button("💾 Save Current Configuration for Scheduler", use_container_width=True):
         if "job_description" not in st.session_state or not st.session_state["job_description"].strip():
             st.error("⚠️ Please paste and run a Job Description at least once before saving config.")
         else:
@@ -1189,11 +1189,15 @@ def _render_scheduling() -> None:
                 "min_cgpa": st.session_state.get("min_cgpa", 0.0),
                 "min_years_exp": st.session_state.get("min_years_exp", 0.0),
                 "model_name": "all-MiniLM-L6-v2",
-                "auto_email": st.session_state.get("auto_email", False)
+                "auto_email": st.session_state.get("auto_email", False),
+                "schedule_time": schedule_time.strftime("%H:%M") if schedule_time else "",
+                "schedule_enabled": schedule_enabled,
             }
-            with open(CONFIG_FILE, "w") as f:
-                json.dump(config, f, indent=4)
-            st.success(f"✅ Configuration saved to {CONFIG_FILE}. The scheduler will use these settings.")
+            config_json = save_scheduler_config(config)
+            st.success("✅ Configuration saved! The scheduler will use these settings.")
+            with st.expander("📋 For Render hosting: copy this to your Environment Variables"):
+                st.caption("On Render Dashboard → Environment → Add variable:")
+                st.code(f"SCHEDULER_CONFIG={config_json}", language="text")
 
     # Store schedule state
     if schedule_enabled and schedule_time:
