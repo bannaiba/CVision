@@ -870,7 +870,7 @@ def _render_filtered_candidates(filtered: list[CandidateRecord]) -> None:
 
         filtered_df = pd.DataFrame(rows)
         st.dataframe(
-            filtered_df.style.applymap(
+            filtered_df.style.map(
                 lambda _: "color: #f87171;", subset=["Reason"]
             ),
             use_container_width=True,
