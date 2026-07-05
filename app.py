@@ -409,6 +409,8 @@ def _inject_css() -> None:
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 
 def _render_sidebar() -> dict:
+    from modules.scheduler_task import _load_scheduler_config
+    sched_cfg = _load_scheduler_config() or {}
     """
     Render the sidebar configuration panel and return a config dict.
 
@@ -512,7 +514,7 @@ def _render_sidebar() -> dict:
             "Minimum CGPA (out of 4.0)",
             min_value=0.0,
             max_value=4.0,
-            value=float(DEFAULT_MIN_CGPA),
+            value=float(sched_cfg.get("min_cgpa", DEFAULT_MIN_CGPA)),
             step=0.1,
             format="%.1f",
             help="Candidates with CGPA below this value will be filtered out.",
@@ -522,7 +524,7 @@ def _render_sidebar() -> dict:
             "Minimum Years of Experience",
             min_value=0,
             max_value=15,
-            value=int(DEFAULT_MIN_YEARS_EXP),
+            value=int(sched_cfg.get("min_years_exp", DEFAULT_MIN_YEARS_EXP)),
             step=1,
             help="Candidates with fewer years will be filtered out.",
         )
@@ -1204,27 +1206,42 @@ def _render_scheduling() -> None:
     st.markdown("### 💾 Configuration")
     st.caption("Save your current Job Description and Filters so the automated scheduler knows what to run.")
     
-    if st.button("💾 Save Current Configuration for Scheduler", use_container_width=True):
-        jd_val = st.session_state.get("jd_input", "")
-        if not jd_val.strip():
-            st.error("⚠️ Please paste a Job Description in the main panel before saving config.")
-        else:
-            config = {
-                "job_description": jd_val.strip(),
-                "sheet_id": st.session_state.get("sheet_id_input", st.session_state.get("sheet_id", "")),
-                "credentials_path": "credentials.json",
-                "min_cgpa": st.session_state.get("min_cgpa", 0.0),
-                "min_years_exp": st.session_state.get("min_years_exp", 0.0),
-                "model_name": "all-MiniLM-L6-v2",
-                "auto_email": st.session_state.get("auto_email", False),
-                "schedule_time": schedule_time.strftime("%H:%M") if schedule_time else "",
-                "schedule_enabled": schedule_enabled,
-            }
-            config_json = save_scheduler_config(config)
-            st.success("✅ Configuration saved! The scheduler will use these settings.")
-            with st.expander("📋 For Render hosting: copy this to your Environment Variables"):
-                st.caption("On Render Dashboard → Environment → Add variable:")
-                st.code(f"SCHEDULER_CONFIG={config_json}", language="text")
+    col_save, col_reset = st.columns([3, 1])
+    with col_save:
+        if st.button("💾 Save Current Configuration for Scheduler", use_container_width=True):
+            jd_val = st.session_state.get("jd_input", "")
+            if not jd_val.strip():
+                st.error("⚠️ Please paste a Job Description in the main panel before saving config.")
+            else:
+                config = {
+                    "job_description": jd_val.strip(),
+                    "sheet_id": st.session_state.get("sheet_id_input", st.session_state.get("sheet_id", "")),
+                    "credentials_path": "credentials.json",
+                    "min_cgpa": st.session_state.get("min_cgpa", 0.0),
+                    "min_years_exp": st.session_state.get("min_years_exp", 0.0),
+                    "model_name": "all-MiniLM-L6-v2",
+                    "auto_email": st.session_state.get("auto_email", False),
+                    "schedule_time": schedule_time.strftime("%H:%M") if schedule_time else "",
+                    "schedule_enabled": schedule_enabled,
+                }
+                config_json = save_scheduler_config(config)
+                st.success("✅ Configuration saved! The scheduler will use these settings.")
+                with st.expander("📋 For Render hosting: copy this to your Environment Variables"):
+                    st.caption("On Render Dashboard → Environment → Add variable:")
+                    st.code(f"SCHEDULER_CONFIG={config_json}", language="text")
+    
+    with col_reset:
+        if st.button("🔄 Reset defaults", use_container_width=True):
+            if "SCHEDULER_CONFIG" in os.environ:
+                del os.environ["SCHEDULER_CONFIG"]
+            from modules.scheduler_task import CONFIG_FILE
+            if Path(CONFIG_FILE).exists():
+                try:
+                    Path(CONFIG_FILE).unlink()
+                except:
+                    pass
+            st.success("✅ Defaults restored! (If on Render, please delete the SCHEDULER_CONFIG environment variable in your dashboard as well)")
+            st.rerun()
 
     # Store schedule state
     if schedule_enabled and schedule_time:
