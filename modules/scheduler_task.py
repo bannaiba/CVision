@@ -137,7 +137,7 @@ def get_scheduler() -> BackgroundScheduler:
     On startup, if a SCHEDULER_CONFIG env var exists with a schedule_time,
     the scheduler will auto-configure itself so it survives Render restarts.
     """
-    scheduler = BackgroundScheduler(timezone="UTC")
+    scheduler = BackgroundScheduler(timezone="Asia/Dhaka")
     scheduler.start()
 
     # Auto-restore scheduled job from env var on startup
