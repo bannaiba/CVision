@@ -160,7 +160,7 @@ def send_email(
     try:
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(
-            smtp_config["host"], smtp_config["port"], context=context
+            smtp_config["host"], smtp_config["port"], context=context, timeout=10
         ) as server:
             server.login(smtp_config["email"], smtp_config["password"])
             server.sendmail(smtp_config["email"], to_email, msg.as_string())
