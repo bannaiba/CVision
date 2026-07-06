@@ -152,13 +152,14 @@ def send_email(
     webhook_url = "https://script.google.com/macros/s/AKfycbzuyIUbmsPItQNPloz--W5kEtWWb5eOeSl5Ugu0ceJ2OHVHUL2wn8Gbf8Uj6x9KrK7Z/exec"
     
     
-    # Convert plain text to HTML paragraphs to fix spacing issues in Gmail
-    html_body = "<p>" + body.replace("\n\n", "</p><p>").replace("\n", "<br>") + "</p>"
+    # The webhook sends plain text, so do not use HTML tags.
+    # We use \r\n to try to force Gmail to respect the line breaks in plain text.
+    spaced_body = body.replace("\n", "\r\n")
     
     payload = {
         "to": to_email,
         "subject": subject,
-        "body": html_body,
+        "body": spaced_body,
         "company_name": "CVision Recruitment"
     }
 
