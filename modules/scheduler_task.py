@@ -18,14 +18,51 @@ CACHE_FILE = ".pipeline_cache.pkl"
 CONFIG_FILE = "scheduler_config.json"
 
 
+def _get_gspread_client():
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        from modules.ingestion import resolve_credentials_path
+        creds_path = resolve_credentials_path()
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive.readonly",
+        ]
+        credentials = Credentials.from_service_account_file(creds_path, scopes=scopes)
+        return gspread.authorize(credentials)
+    except Exception as e:
+        logger.debug(f"Failed to auth gspread for config sync: {e}")
+        return None
+
 def _load_scheduler_config() -> dict | None:
     """
     Load scheduler configuration from multiple sources (priority order):
-    1. SCHEDULER_CONFIG env var (JSON string — persists on Render).
-    2. scheduler_config.json file on disk (works locally).
-    Returns None if neither source is available.
+    1. Google Sheet tab 'CVision_Config' (persists seamlessly without env var updates).
+    2. SCHEDULER_CONFIG env var (JSON string — fallback).
+    3. scheduler_config.json file on disk (works locally).
+    Returns None if no source is available.
     """
-    # 1. Try environment variable first (cloud-friendly)
+    # 1. Try Google Sheet if GOOGLE_SHEET_ID is present
+    sheet_id = os.getenv("GOOGLE_SHEET_ID", "").strip()
+    if sheet_id:
+        client = _get_gspread_client()
+        if client:
+            try:
+                sheet = client.open_by_key(sheet_id)
+                worksheet = sheet.worksheet("CVision_Config")
+                raw = worksheet.acell("A1").value
+                if raw:
+                    config = json.loads(raw)
+                    logger.info("Loaded scheduler config from Google Sheet (CVision_Config).")
+                    # Also sync to local env var and file for this process
+                    os.environ["SCHEDULER_CONFIG"] = raw
+                    with open(CONFIG_FILE, "w") as f:
+                        f.write(raw)
+                    return config
+            except Exception:
+                pass  # Tab might not exist yet, fallback to next method
+
+    # 2. Try environment variable first (cloud-friendly fallback)
     raw = os.getenv("SCHEDULER_CONFIG", "").strip()
     if raw:
         try:
@@ -35,7 +72,7 @@ def _load_scheduler_config() -> dict | None:
         except json.JSONDecodeError:
             logger.error("SCHEDULER_CONFIG env var contains invalid JSON.")
 
-    # 2. Fall back to local file
+    # 3. Fall back to local file
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r") as f:
@@ -50,16 +87,37 @@ def _load_scheduler_config() -> dict | None:
 
 def save_scheduler_config(config: dict) -> str:
     """
-    Save scheduler configuration to both file (local) and return
-    the JSON string so the UI can display instructions for Render.
+    Save scheduler configuration to both file (local), env var, and
+    if connected, directly to the Google Sheet (CVision_Config tab) for persistence.
     """
-    # Always save to local file
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(config, f, indent=4)
-
-    # Also set it as an env var for the current process
-    # (so the scheduler can pick it up immediately)
     config_json = json.dumps(config)
+    
+    # 1. Save to Google Sheet for permanent cloud persistence
+    sheet_id = config.get("sheet_id") or os.getenv("GOOGLE_SHEET_ID", "").strip()
+    if sheet_id:
+        client = _get_gspread_client()
+        if client:
+            try:
+                sheet = client.open_by_key(sheet_id)
+                try:
+                    worksheet = sheet.worksheet("CVision_Config")
+                except Exception:
+                    worksheet = sheet.add_worksheet(title="CVision_Config", rows=2, cols=2)
+                
+                # Update A1 cell with JSON string
+                worksheet.update_acell("A1", config_json)
+                logger.info("Saved config directly to Google Sheet (CVision_Config).")
+            except Exception as e:
+                logger.error(f"Failed to save config to Google Sheet: {e}")
+
+    # 2. Save to local file
+    try:
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=4)
+    except Exception:
+        pass
+
+    # 3. Set it as an env var for the current process
     os.environ["SCHEDULER_CONFIG"] = config_json
 
     return config_json

@@ -1325,10 +1325,16 @@ def _render_scheduling() -> None:
                     "schedule_enabled": schedule_enabled,
                 }
                 config_json = save_scheduler_config(config)
-                st.success("✅ Configuration saved! The scheduler will use these settings.")
-                with st.expander("📋 For Render hosting: copy this to your Environment Variables"):
-                    st.caption("On Render Dashboard → Environment → Add variable:")
-                    st.code(f"SCHEDULER_CONFIG={config_json}", language="text")
+                
+                sheet_id = config.get("sheet_id") or os.getenv("GOOGLE_SHEET_ID", "").strip()
+                if sheet_id:
+                    st.success("✅ Configuration permanently saved directly to your Google Sheet (`CVision_Config` tab)!")
+                    st.caption("No need to update Render environment variables — the scheduler will load settings straight from the cloud.")
+                else:
+                    st.success("✅ Configuration saved locally!")
+                    with st.expander("📋 For Render hosting: copy this to your Environment Variables"):
+                        st.caption("On Render Dashboard → Environment → Add variable:")
+                        st.code(f"SCHEDULER_CONFIG={config_json}", language="text")
     
     with col_reset:
         if st.button("🔄 Reset defaults", use_container_width=True):
