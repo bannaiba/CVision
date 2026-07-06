@@ -122,6 +122,39 @@ def save_scheduler_config(config: dict) -> str:
 
     return config_json
 
+def clear_scheduler_config(sheet_id: str | None = None) -> None:
+    """
+    Completely wipe the scheduler configuration from all persistent sources:
+    1. Google Sheet tab (CVision_Config)
+    2. Local scheduler_config.json file
+    3. SCHEDULER_CONFIG environment variable
+    """
+    # 1. Clear Google Sheet if accessible
+    if not sheet_id:
+        sheet_id = os.getenv("GOOGLE_SHEET_ID", "").strip()
+        
+    if sheet_id:
+        client = _get_gspread_client()
+        if client:
+            try:
+                sheet = client.open_by_key(sheet_id)
+                worksheet = sheet.worksheet("CVision_Config")
+                worksheet.update_acell("A1", "")
+                logger.info("Cleared config from Google Sheet (CVision_Config).")
+            except Exception:
+                pass
+
+    # 2. Clear local file
+    try:
+        if os.path.exists(CONFIG_FILE):
+            os.remove(CONFIG_FILE)
+    except Exception:
+        pass
+
+    # 3. Clear env var
+    if "SCHEDULER_CONFIG" in os.environ:
+        del os.environ["SCHEDULER_CONFIG"]
+
 
 def _scheduler_job():
     """

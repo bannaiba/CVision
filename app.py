@@ -1338,15 +1338,23 @@ def _render_scheduling() -> None:
     
     with col_reset:
         if st.button("🔄 Reset defaults", use_container_width=True):
-            if "SCHEDULER_CONFIG" in os.environ:
-                del os.environ["SCHEDULER_CONFIG"]
-            from modules.scheduler_task import CONFIG_FILE
-            if Path(CONFIG_FILE).exists():
+            # 1. Clear persistent scheduler config from Google Sheets, env vars, and local file
+            from modules.scheduler_task import clear_scheduler_config, CACHE_FILE
+            
+            current_sheet_id = st.session_state.get("sheet_id_input") or st.session_state.get("sheet_id") or os.getenv("GOOGLE_SHEET_ID")
+            clear_scheduler_config(current_sheet_id)
+            
+            # 2. Clear background pipeline results cache
+            if Path(CACHE_FILE).exists():
                 try:
-                    Path(CONFIG_FILE).unlink()
-                except:
+                    Path(CACHE_FILE).unlink()
+                except Exception:
                     pass
-            st.success("✅ Defaults restored! (If on Render, please delete the SCHEDULER_CONFIG environment variable in your dashboard as well)")
+            
+            # 3. Clear all Streamlit UI state so sliders and text areas reboot
+            st.session_state.clear()
+            
+            st.success("✅ Defaults restored! All configurations and cached results have been wiped.")
             st.rerun()
 
     # Store schedule state
