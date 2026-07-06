@@ -171,19 +171,8 @@ def _inject_css() -> None:
         opacity: 1 !important;
     }
     /* Hide toolbar menu items but keep sidebar toggle arrow visible */
-    div[data-testid="stToolbar"] button[kind="header"] {
+    [data-testid="stToolbar"] [data-testid="stFileUploaderDropzone"] {
         display: none !important;
-    }
-    div[data-testid="stToolbar"] {
-        visibility: hidden !important;
-        height: 0 !important;
-        overflow: hidden !important;
-    }
-    /* Keep the sidebar collapse button always accessible */
-    [data-testid="collapsedControl"] {
-        visibility: visible !important;
-        display: flex !important;
-        z-index: 999999 !important;
     }
     /* Hide the built-in "running" status bar at the top */
     .stStatusWidget, [data-testid="stStatusWidget"] {
