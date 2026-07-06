@@ -409,8 +409,6 @@ def _inject_css() -> None:
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 
 def _render_sidebar() -> dict:
-    from modules.scheduler_task import _load_scheduler_config
-    sched_cfg = _load_scheduler_config() or {}
     """
     Render the sidebar configuration panel and return a config dict.
 
@@ -427,6 +425,8 @@ def _render_sidebar() -> dict:
         - ``min_years_exp``   : Minimum years of experience threshold
         - ``model_name``      : Embedding model identifier (fixed for Phase 1)
     """
+    from modules.scheduler_task import _load_scheduler_config
+    sched_cfg = _load_scheduler_config() or {}
     with st.sidebar:
         # ── Brand ──────────────────────────────────────────────────────────────
         st.markdown("""
