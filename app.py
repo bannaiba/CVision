@@ -147,12 +147,61 @@ def _inject_css() -> None:
         background: linear-gradient(135deg, #0a0d18 0%, #10132a 50%, #0a0d18 100%);
     }
 
-        /* Disable the generic grey-out during script execution */
+    /* ── PREVENT GREY-OUT during Streamlit reruns ────────────────────────── */
     [data-testid="stAppViewContainer"] > .block-container {
+        opacity: 1 !important;
+    }
+    .stApp > div[data-testid="stAppViewContainer"] {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    /* Kill Streamlit's built-in skeleton/loading overlay */
+    .stApp [data-testid="stAppViewContainer"]::before,
+    .stApp [data-testid="stAppViewContainer"]::after {
+        display: none !important;
+    }
+    /* Remove the faded overlay on stale elements */
+    .element-container, .stMarkdown, .stAlert, .stButton,
+    [data-testid="stVerticalBlock"], [data-testid="column"] {
+        opacity: 1 !important;
+        transition: none !important;
+    }
+    /* Ensure sidebar never fades */
+    [data-testid="stSidebar"] * {
         opacity: 1 !important;
     }
     div[data-testid="stToolbar"] {
         display: none !important;
+    }
+    /* Hide the built-in "running" status bar at the top */
+    .stStatusWidget, [data-testid="stStatusWidget"] {
+        display: none !important;
+    }
+
+    /* ── Custom animated spinner ─────────────────────────────────────────── */
+    @keyframes cvision-spin {
+        0%   { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes cvision-pulse {
+        0%, 100% { opacity: 0.7; }
+        50%      { opacity: 1; }
+    }
+    /* Override Streamlit's default spinner to use our animation */
+    [data-testid="stSpinner"] > div {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+    [data-testid="stSpinner"] > div > svg,
+    [data-testid="stSpinner"] > div > i {
+        animation: cvision-spin 1s linear infinite !important;
+    }
+    [data-testid="stSpinner"] > div > span,
+    [data-testid="stSpinner"] > div > p {
+        animation: cvision-pulse 1.5s ease-in-out infinite !important;
+        color: #a5b4fc !important;
+        font-weight: 500 !important;
     }
 
     /* ── Sidebar ─────────────────────────────────────────────────────────── */
@@ -366,11 +415,22 @@ def _inject_css() -> None:
         font-weight: 600 !important;
         border-radius: 10px !important;
         padding: 0.6rem 1.5rem !important;
-        transition: opacity 0.2s ease, transform 0.2s ease !important;
+        transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+        cursor: pointer !important;
     }
     .stButton > button:hover {
-        opacity: 0.9 !important;
+        opacity: 0.92 !important;
         transform: translateY(-1px) !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important;
+    }
+    .stButton > button:active {
+        transform: translateY(0px) scale(0.98) !important;
+        opacity: 1 !important;
+    }
+    /* Prevent buttons from greying out while Streamlit re-runs */
+    .stButton > button:disabled {
+        opacity: 0.65 !important;
+        cursor: wait !important;
     }
 
     .stTextArea textarea, .stTextInput input {
@@ -1646,18 +1706,22 @@ def main() -> None:
     </div>
     """, unsafe_allow_html=True)
 
-    # Auto-load job_description.txt if it exists (next to app.py)
-    _jd_file = Path(__file__).parent / "job_description.txt"
-    _jd_default = ""
-    if _jd_file.exists():
-        try:
-            _jd_default = _jd_file.read_text(encoding="utf-8").strip()
-            st.caption(
-                f"📄 Pre-loaded from `job_description.txt` — edit below to override, "
-                f"or update the file directly for permanent changes."
-            )
-        except Exception:
-            pass
+    # Load JD default: saved config > job_description.txt > empty
+    from modules.scheduler_task import _load_scheduler_config as _load_cfg
+    _saved_cfg = _load_cfg() or {}
+    _jd_default = _saved_cfg.get("job_description", "")
+
+    if not _jd_default:
+        _jd_file = Path(__file__).parent / "job_description.txt"
+        if _jd_file.exists():
+            try:
+                _jd_default = _jd_file.read_text(encoding="utf-8").strip()
+                st.caption(
+                    f"📄 Pre-loaded from `job_description.txt` — edit below to override, "
+                    f"or update the file directly for permanent changes."
+                )
+            except Exception:
+                pass
 
     job_description = st.text_area(
         "Job Description",
