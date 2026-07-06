@@ -115,11 +115,13 @@ def _scheduler_job():
             }, f)
 
         if auto_email and filtered:
+            position = config.get("position_name", "the open position")
+            company = config.get("company_name", "Our Organization")
             logger.info(f"Auto-sending filter rejections for {len(filtered)} candidates...")
             send_filter_rejection_emails(
                 filtered_candidates=filtered,
-                position="the open position",
-                company_name="Our Organization",
+                position=position,
+                company_name=company,
                 dry_run=False,
             )
 

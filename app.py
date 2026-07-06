@@ -577,6 +577,7 @@ def _render_sidebar() -> dict:
             value=float(sched_cfg.get("min_cgpa", DEFAULT_MIN_CGPA)),
             step=0.1,
             format="%.1f",
+            key="min_cgpa_slider",
             help="Candidates with CGPA below this value will be filtered out.",
         )
 
@@ -586,6 +587,7 @@ def _render_sidebar() -> dict:
             max_value=15,
             value=int(sched_cfg.get("min_years_exp", DEFAULT_MIN_YEARS_EXP)),
             step=1,
+            key="min_years_exp_slider",
             help="Candidates with fewer years will be filtered out.",
         )
 
@@ -622,6 +624,34 @@ def _render_sidebar() -> dict:
 
         st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
 
+        # ── Position & Company ─────────────────────────────────────────────────
+        st.markdown("### 🏢 Organization")
+        position_name = st.text_input(
+            "Position Title",
+            value=sched_cfg.get("position_name", "the open position"),
+            key="position_name_input",
+            help="Used in all automated emails.",
+        )
+        company_name = st.text_input(
+            "Company Name",
+            value=sched_cfg.get("company_name", "Our Organization"),
+            key="company_name_input",
+            help="Used in all automated emails.",
+        )
+
+        st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
+
+        # ── Auto-Email Toggle ──────────────────────────────────────────────────
+        st.markdown("### 📧 Auto-Email")
+        auto_email = st.toggle(
+            "Auto-send filter rejections on completion",
+            value=sched_cfg.get("auto_email", False),
+            key="auto_email_toggle",
+            help="If enabled, candidates who fail hard filters will immediately receive a rejection email when the pipeline finishes.",
+        )
+
+        st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
+
         # ── Help link ──────────────────────────────────────────────────────────
         st.caption("📋 See `GOOGLE_FORM_SPEC.md` for form setup & Service Account guide.")
 
@@ -633,6 +663,9 @@ def _render_sidebar() -> dict:
         "min_cgpa":         min_cgpa,
         "min_years_exp":    float(min_years_exp),
         "model_name":       "all-MiniLM-L6-v2",
+        "position_name":    position_name,
+        "company_name":     company_name,
+        "auto_email":       auto_email,
     }
 
 
@@ -1110,18 +1143,22 @@ def _render_candidate_selection(
 
     email_col1, email_col2 = st.columns(2)
 
+    position_name = st.session_state.get("position_name_input", "the open position")
+    company_name = st.session_state.get("company_name_input", "Our Organization")
+
     with email_col1:
-        position_name = st.text_input(
-            "Position Title (for emails)",
-            value="the open position",
-            key="email_position",
+        st.markdown(
+            f"<div style='color:#94a3b8; font-size:0.8rem;'>📌 Position: "
+            f"<strong style='color:#e2e8f0;'>{position_name}</strong></div>",
+            unsafe_allow_html=True,
         )
     with email_col2:
-        company_name = st.text_input(
-            "Company Name (for emails)",
-            value="Our Organization",
-            key="email_company",
+        st.markdown(
+            f"<div style='color:#94a3b8; font-size:0.8rem;'>🏢 Company: "
+            f"<strong style='color:#e2e8f0;'>{company_name}</strong></div>",
+            unsafe_allow_html=True,
         )
+    st.caption("Edit these in the sidebar under 🏢 Organization.")
 
     btn_col1, btn_col2, btn_col3 = st.columns(3)
 
@@ -1277,10 +1314,12 @@ def _render_scheduling() -> None:
                     "job_description": jd_val.strip(),
                     "sheet_id": st.session_state.get("sheet_id_input", st.session_state.get("sheet_id", "")),
                     "credentials_path": "credentials.json",
-                    "min_cgpa": st.session_state.get("min_cgpa", 0.0),
-                    "min_years_exp": st.session_state.get("min_years_exp", 0.0),
+                    "min_cgpa": float(st.session_state.get("min_cgpa_slider", DEFAULT_MIN_CGPA)),
+                    "min_years_exp": float(st.session_state.get("min_years_exp_slider", DEFAULT_MIN_YEARS_EXP)),
                     "model_name": "all-MiniLM-L6-v2",
-                    "auto_email": st.session_state.get("auto_email", False),
+                    "auto_email": st.session_state.get("auto_email_toggle", False),
+                    "position_name": st.session_state.get("position_name_input", "the open position"),
+                    "company_name": st.session_state.get("company_name_input", "Our Organization"),
                     "schedule_time": schedule_time.strftime("%H:%M") if schedule_time else "",
                     "schedule_enabled": schedule_enabled,
                 }
@@ -1805,12 +1844,13 @@ def main() -> None:
     </div>
     """, unsafe_allow_html=True)
 
-    auto_email = st.toggle(
-        "Auto-send filter rejections on completion",
-        value=st.session_state.get("auto_email", False),
-        help="If enabled, candidates who fail hard filters will immediately receive a rejection email when the pipeline finishes.",
-    )
-    st.session_state["auto_email"] = auto_email
+    auto_email = config.get("auto_email", False)
+    if auto_email:
+        st.markdown(
+            "<div style='color: #34d399; font-size: 0.82rem; margin-bottom: 0.5rem;'>"
+            "📧 Auto-send filter rejections is <strong>ON</strong> (toggle in sidebar)</div>",
+            unsafe_allow_html=True,
+        )
 
     analyze_btn = st.button(
         "🚀 Analyze & Rank Candidates",
@@ -1895,8 +1935,8 @@ def main() -> None:
             with st.spinner("📧 Auto-sending filter rejection emails..."):
                 send_filter_rejection_emails(
                     filtered_candidates=filtered,
-                    position="the open position",
-                    company_name="Our Organization",
+                    position=config.get("position_name", "the open position"),
+                    company_name=config.get("company_name", "Our Organization"),
                     dry_run=False,
                 )
             st.toast("✅ Auto-sent filter rejection emails!")
