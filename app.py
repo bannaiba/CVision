@@ -1232,31 +1232,38 @@ def _render_candidate_selection(
     st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
     st.markdown("<div class='section-heading'>📊 Export Results</div>", unsafe_allow_html=True)
     
-    if st.button("💾 Save Analysis to Google Sheet", use_container_width=True):
-        with st.spinner("Exporting results to Google Sheet..."):
-            try:
-                sheet_id = "1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ"
-                creds_path = st.session_state.get("credentials_path", "credentials.json")
-                
-                # Assume emails are sent if selected/rejected unless we track it exactly
-                email_status = {}
-                for cand in candidates:
-                    # In a real app we'd track actual success per candidate in session_state, 
-                    # but here we'll assume 'Yes' for simplicity if the button was used, or just 'Pending'
-                    email_status[cand.name] = "Pending"
+    col_export1, col_export2 = st.columns(2)
+    
+    with col_export1:
+        if st.button("💾 Save Analysis to Google Sheet", use_container_width=True):
+            with st.spinner("Exporting results to Google Sheet..."):
+                try:
+                    sheet_id = "1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ"
+                    creds_path = st.session_state.get("credentials_path", "credentials.json")
                     
-                export_results_to_sheet(
-                    sheet_id=sheet_id,
-                    credentials_path=creds_path,
-                    results_df=results_df,
-                    selected_names=selected_names,
-                    email_status=email_status,
-                    tab_name="CVision Database"
-                )
-                st.toast("✅ Results successfully saved to Google Sheet!", icon="📊")
-                st.success("✅ Results successfully saved to Google Sheet!")
-            except Exception as e:
-                st.error(f"❌ Failed to export: {e}")
+                    # Assume emails are sent if selected/rejected unless we track it exactly
+                    email_status = {}
+                    for cand in candidates:
+                        # In a real app we'd track actual success per candidate in session_state, 
+                        # but here we'll assume 'Yes' for simplicity if the button was used, or just 'Pending'
+                        email_status[cand.name] = "Pending"
+                        
+                    export_results_to_sheet(
+                        sheet_id=sheet_id,
+                        credentials_path=creds_path,
+                        results_df=results_df,
+                        selected_names=selected_names,
+                        email_status=email_status,
+                        tab_name="CVision Database"
+                    )
+                    st.toast("✅ Results successfully saved to Google Sheet!", icon="📊")
+                    st.success("✅ Results successfully saved to Google Sheet!")
+                except Exception as e:
+                    st.error(f"❌ Failed to export: {e}")
+                    
+    with col_export2:
+        sheet_url = "https://docs.google.com/spreadsheets/d/1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ/edit?usp=sharing"
+        st.link_button("🔗 Open Google Sheet", sheet_url, use_container_width=True)
 
 
 # ── Pipeline Scheduling ───────────────────────────────────────────────────────
