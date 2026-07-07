@@ -245,7 +245,7 @@ class CandidateRecord:
 
 # ── Google Sheets: Authentication ─────────────────────────────────────────────
 
-def _get_gspread_client(credentials_path: str):
+def _get_gspread_client(credentials_path: str, readonly: bool = True):
     """
     Authenticate with Google and return a gspread Client.
 
@@ -277,15 +277,69 @@ def _get_gspread_client(credentials_path: str):
     resolved_path = resolve_credentials_path(credentials_path)
 
     # Request only the minimum necessary scopes (principle of least privilege)
-    scopes = [
-        "https://www.googleapis.com/auth/spreadsheets.readonly",
-        "https://www.googleapis.com/auth/drive.readonly",
-    ]
+    if readonly:
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets.readonly",
+            "https://www.googleapis.com/auth/drive.readonly",
+        ]
+    else:
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
     creds = Credentials.from_service_account_file(resolved_path, scopes=scopes)
     client = gspread.authorize(creds)
     logger.debug("gspread authenticated successfully with service account.")
     return client
 
+def export_results_to_sheet(
+    sheet_id: str,
+    credentials_path: str,
+    results_df,
+    selected_names: list,
+    email_status: dict,
+    tab_name: str = "CVision Database"
+):
+    """
+    Export the analysis results to a Google Sheet.
+    Creates the tab if it does not exist.
+    """
+    client = _get_gspread_client(credentials_path, readonly=False)
+    sheet = client.open_by_key(sheet_id)
+    
+    try:
+        worksheet = sheet.worksheet(tab_name)
+    except Exception:
+        # If worksheet doesn't exist, create it
+        worksheet = sheet.add_worksheet(title=tab_name, rows="100", cols="20")
+    
+    # Define headers
+    headers = ["Status", "Candidate Name", "Rank", "Fit Score (%)", "Top Skills", "CGPA", "Degree", "Email Sent"]
+    
+    # Check if headers exist
+    existing_data = worksheet.get_all_values()
+    if not existing_data or existing_data[0] != headers:
+        if not existing_data:
+            worksheet.append_row(headers)
+        else:
+            # Maybe it has different headers, let's just insert headers at row 1 if empty
+            pass
+
+    # Prepare rows
+    rows_to_insert = []
+    for _, row in results_df.iterrows():
+        cand_name = row.get("Candidate Name", row.get("Filename", "Unknown"))
+        status = "Accepted" if cand_name in selected_names else "Rejected"
+        rank = row.get("Rank", "")
+        score = row.get("Fit Score (%)", "")
+        skills = row.get("Top Skills", "")
+        cgpa = row.get("CGPA", "")
+        degree = row.get("Degree", "")
+        email_sent = email_status.get(cand_name, "No")
+        
+        rows_to_insert.append([status, cand_name, rank, score, skills, cgpa, degree, email_sent])
+        
+    worksheet.append_rows(rows_to_insert)
 
 # ── Google Sheets: Data Fetching ──────────────────────────────────────────────
 

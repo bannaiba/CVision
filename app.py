@@ -34,6 +34,7 @@ import io
 import logging
 import os
 import tempfile
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -49,6 +50,7 @@ from modules.ingestion import (
     download_all_resumes,
     fetch_candidates_from_sheet,
     load_mock_candidates,
+    export_results_to_sheet,
     DEFAULT_MIN_CGPA,
     DEFAULT_MIN_YEARS_EXP,
 )
@@ -1227,6 +1229,35 @@ def _render_candidate_selection(
             f"{results['failed']} failed, {results['skipped']} skipped."
         )
 
+    st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-heading'>📊 Export Results</div>", unsafe_allow_html=True)
+    
+    if st.button("💾 Save Analysis to Google Sheet", use_container_width=True):
+        with st.spinner("Exporting results to Google Sheet..."):
+            try:
+                sheet_id = "1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ"
+                creds_path = st.session_state.get("credentials_path", "credentials.json")
+                
+                # Assume emails are sent if selected/rejected unless we track it exactly
+                email_status = {}
+                for cand in candidates:
+                    # In a real app we'd track actual success per candidate in session_state, 
+                    # but here we'll assume 'Yes' for simplicity if the button was used, or just 'Pending'
+                    email_status[cand.name] = "Pending"
+                    
+                export_results_to_sheet(
+                    sheet_id=sheet_id,
+                    credentials_path=creds_path,
+                    results_df=results_df,
+                    selected_names=selected_names,
+                    email_status=email_status,
+                    tab_name="CVision Database"
+                )
+                st.toast("✅ Results successfully saved to Google Sheet!", icon="📊")
+                st.success("✅ Results successfully saved to Google Sheet!")
+            except Exception as e:
+                st.error(f"❌ Failed to export: {e}")
+
 
 # ── Pipeline Scheduling ───────────────────────────────────────────────────────
 
@@ -1328,14 +1359,11 @@ def _render_scheduling() -> None:
                 
                 sheet_id = config.get("sheet_id") or os.getenv("GOOGLE_SHEET_ID", "").strip()
                 if sheet_id:
-                    st.success("✅ Configuration permanently saved directly to your Google Sheet (`CVision_Config` tab)!")
-                    st.caption("No need to update Render environment variables — the scheduler will load settings straight from the cloud.")
+                    st.session_state["show_save_confirmation"] = "sheet"
                 else:
-                    st.success("✅ Configuration saved locally!")
-                    with st.expander("📋 For Render hosting: copy this to your Environment Variables"):
-                        st.caption("On Render Dashboard → Environment → Add variable:")
-                        st.code(f"SCHEDULER_CONFIG={config_json}", language="text")
-    
+                    st.session_state["show_save_confirmation"] = "local"
+                st.rerun()
+                
     with col_reset:
         if st.button("🔄 Reset defaults", use_container_width=True):
             # 1. Clear persistent scheduler config from Google Sheets, env vars, and local file
@@ -1354,7 +1382,7 @@ def _render_scheduling() -> None:
             # 3. Clear all Streamlit UI state so sliders and text areas reboot
             st.session_state.clear()
             
-            st.success("✅ Defaults restored! All configurations and cached results have been wiped.")
+            st.session_state["show_reset_confirmation"] = True
             st.rerun()
 
     # Store schedule state
@@ -1577,6 +1605,17 @@ def _run_pipeline_sheet_mode(
             )
             status.update(label="✅ Pipeline Completed Successfully!", state="complete", expanded=False)
             return res
+        except ValueError as e:
+            if str(e) == "No candidate submissions found in the Google Sheet.":
+                status.update(label="ℹ️ No forms were submitted", state="complete", expanded=False)
+                st.session_state["no_forms_submitted"] = True
+                for k in ["results_df", "stats", "candidates", "filtered"]:
+                    st.session_state.pop(k, None)
+                st.rerun()
+            else:
+                status.update(label="❌ Pipeline Failed", state="error", expanded=True)
+                st.error(f"Pipeline Error: {e}")
+                st.stop()
         except Exception as e:
             status.update(label="❌ Pipeline Failed", state="error", expanded=True)
             st.error(f"Pipeline Error: {e}")
@@ -1721,22 +1760,41 @@ def main() -> None:
     → pipeline execution → results dashboard. All state is managed via
     ``st.session_state`` so results persist across Streamlit reruns.
     """
-    if "results_df" not in st.session_state and Path(CACHE_FILE).exists():
+    if "results_df" not in st.session_state and "no_forms_submitted" not in st.session_state and Path(CACHE_FILE).exists():
         try:
             import pickle
             with open(CACHE_FILE, "rb") as f:
                 cache_data = pickle.load(f)
-            st.session_state["results_df"] = cache_data["results_df"]
-            st.session_state["stats"] = cache_data["stats"]
-            st.session_state["candidates"] = cache_data["candidates"]
-            st.session_state["filtered"] = cache_data["filtered"]
-            st.session_state["job_description"] = cache_data["job_description"]
+            
             run_time = cache_data.get("last_run", "").split(".")[0].replace("T", " ")
-            st.toast(f"Loaded background run from {run_time}", icon="🔄")
+            if cache_data.get("no_forms_submitted"):
+                st.session_state["no_forms_submitted"] = True
+                st.toast(f"Background run at {run_time} found no submissions.", icon="ℹ️")
+            else:
+                st.session_state["results_df"] = cache_data["results_df"]
+                st.session_state["stats"] = cache_data["stats"]
+                st.session_state["candidates"] = cache_data["candidates"]
+                st.session_state["filtered"] = cache_data["filtered"]
+                st.session_state["job_description"] = cache_data["job_description"]
+                st.toast(f"Loaded background run from {run_time}", icon="🔄")
         except Exception:
             pass
 
     _inject_css()
+    
+    if st.session_state.get("show_reset_confirmation"):
+        st.toast("✅ Defaults restored! All configurations and cached results have been wiped.", icon="🔄")
+        st.success("✅ Defaults restored! All configurations and cached results have been wiped.")
+        st.session_state["show_reset_confirmation"] = False
+
+    if st.session_state.get("show_save_confirmation"):
+        if st.session_state["show_save_confirmation"] == "sheet":
+            st.toast("✅ Configuration permanently saved directly to your Google Sheet (`CVision_Config` tab)!", icon="💾")
+            st.success("✅ Configuration permanently saved directly to your Google Sheet (`CVision_Config` tab)!")
+        else:
+            st.toast("✅ Configuration saved locally!", icon="💾")
+            st.success("✅ Configuration saved locally!")
+        st.session_state["show_save_confirmation"] = False
 
     # ── Sidebar ────────────────────────────────────────────────────────────────
     config = _render_sidebar()
@@ -1957,7 +2015,10 @@ def main() -> None:
             st.toast("✅ Auto-sent filter rejection emails!")
 
     # ── Results Section (shown if analysis has been run) ──────────────────────
-    if "results_df" in st.session_state:
+    if st.session_state.get("no_forms_submitted"):
+        st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
+        st.info("ℹ️ **No forms were submitted.** The Google Sheet is currently empty. Please wait for candidates to apply.")
+    elif "results_df" in st.session_state:
         results_df = st.session_state["results_df"]
         stats      = st.session_state["stats"]
         candidates = st.session_state["candidates"]

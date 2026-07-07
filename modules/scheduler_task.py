@@ -218,6 +218,16 @@ def _scheduler_job():
 
         logger.info("Scheduled job completed successfully.")
 
+    except ValueError as e:
+        if str(e) == "No candidate submissions found in the Google Sheet.":
+            logger.info("No forms submitted. Caching empty state.")
+            with open(CACHE_FILE, "wb") as f:
+                pickle.dump({
+                    "no_forms_submitted": True,
+                    "last_run": datetime.now().isoformat()
+                }, f)
+        else:
+            logger.exception(f"Scheduled job failed: {e}")
     except Exception as e:
         logger.exception(f"Scheduled job failed: {e}")
 
