@@ -319,9 +319,12 @@ def export_results_to_sheet(
         worksheet = sheet.worksheet(tab_prefix) # Fallback to default
     
     # Define headers
-    headers = ["Status", "Candidate Name", "Phone", "CGPA", "Rank", "Fit Score (%)", "Top Skills", "Degree", "Email Sent"]
+    headers = ["Status", "Candidate Name", "Phone", "CGPA", "Rank", "Fit Score (%)", "Top Skills", "Degree", "Email Sent", "Saved At"]
     
     phone_map = {c.name: (c.phone or "N/A") for c in candidates}
+    
+    # We can use a more readable timestamp format for the rows
+    row_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     # Prepare rows
     rows_to_insert = [headers]
@@ -336,7 +339,7 @@ def export_results_to_sheet(
         degree = row.get("Degree", "")
         email_sent = email_status.get(cand_name, "No")
         
-        rows_to_insert.append([status, cand_name, phone, cgpa, rank, score, skills, degree, email_sent])
+        rows_to_insert.append([status, cand_name, phone, cgpa, rank, score, skills, degree, email_sent, row_timestamp])
         
     worksheet.update(values=rows_to_insert, range_name="A1")
 
