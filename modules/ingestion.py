@@ -296,50 +296,49 @@ def export_results_to_sheet(
     sheet_id: str,
     credentials_path: str,
     results_df,
+    candidates: list,
     selected_names: list,
     email_status: dict,
-    tab_name: str = "CVision Database"
+    tab_prefix: str = "CVision Database"
 ):
     """
     Export the analysis results to a Google Sheet.
     Creates the tab if it does not exist.
     """
+    import datetime
     client = _get_gspread_client(credentials_path, readonly=False)
     sheet = client.open_by_key(sheet_id)
     
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")
+    tab_name = f"{tab_prefix} - {timestamp}"
+    
     try:
-        worksheet = sheet.worksheet(tab_name)
-    except Exception:
-        # If worksheet doesn't exist, create it
         worksheet = sheet.add_worksheet(title=tab_name, rows="100", cols="20")
+    except Exception as e:
+        logger.error(f"Failed to create new worksheet {tab_name}: {e}")
+        worksheet = sheet.worksheet(tab_prefix) # Fallback to default
     
     # Define headers
-    headers = ["Status", "Candidate Name", "Rank", "Fit Score (%)", "Top Skills", "CGPA", "Degree", "Email Sent"]
+    headers = ["Status", "Candidate Name", "Phone", "CGPA", "Rank", "Fit Score (%)", "Top Skills", "Degree", "Email Sent"]
     
-    # Check if headers exist
-    existing_data = worksheet.get_all_values()
-    if not existing_data or existing_data[0] != headers:
-        if not existing_data:
-            worksheet.append_row(headers)
-        else:
-            # Maybe it has different headers, let's just insert headers at row 1 if empty
-            pass
-
+    phone_map = {c.name: (c.phone or "N/A") for c in candidates}
+    
     # Prepare rows
-    rows_to_insert = []
+    rows_to_insert = [headers]
     for _, row in results_df.iterrows():
         cand_name = row.get("Candidate Name", row.get("Filename", "Unknown"))
         status = "Accepted" if cand_name in selected_names else "Rejected"
+        phone = phone_map.get(cand_name, "N/A")
+        cgpa = row.get("CGPA", "")
         rank = row.get("Rank", "")
         score = row.get("Fit Score (%)", "")
         skills = row.get("Top Skills", "")
-        cgpa = row.get("CGPA", "")
         degree = row.get("Degree", "")
         email_sent = email_status.get(cand_name, "No")
         
-        rows_to_insert.append([status, cand_name, rank, score, skills, cgpa, degree, email_sent])
+        rows_to_insert.append([status, cand_name, phone, cgpa, rank, score, skills, degree, email_sent])
         
-    worksheet.append_rows(rows_to_insert)
+    worksheet.update(values=rows_to_insert, range_name="A1")
 
 # ── Google Sheets: Data Fetching ──────────────────────────────────────────────
 

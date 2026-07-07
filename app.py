@@ -1252,9 +1252,10 @@ def _render_candidate_selection(
                         sheet_id=sheet_id,
                         credentials_path=creds_path,
                         results_df=results_df,
+                        candidates=candidates,
                         selected_names=selected_names,
                         email_status=email_status,
-                        tab_name="CVision Database"
+                        tab_prefix="CVision Database"
                     )
                     st.toast("✅ Results successfully saved to Google Sheet!", icon="📊")
                     st.success("✅ Results successfully saved to Google Sheet!")
