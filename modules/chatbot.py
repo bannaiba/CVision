@@ -69,16 +69,22 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
         try:
             row = results_df[results_df["Candidate Name"] == name]
             if not row.empty:
-                fit_score = row.iloc[0].get("Fit Score (%)", "N/A")
+                val = row.iloc[0].get("Fit Score (%)", "N/A")
+                if hasattr(val, "item"): val = val.item()
+                fit_score = val
         except:
             pass
+
+        def _safe_float(v):
+            if v == -1.0 or v is None: return None
+            return float(v)
 
         return {
             "name": record.name,
             "email": record.email,
-            "cgpa": record.cgpa if record.cgpa != -1.0 else None,
+            "cgpa": _safe_float(record.cgpa),
             "degree": record.degree,
-            "years_experience": record.years_exp if record.years_exp != -1.0 else None,
+            "years_experience": _safe_float(record.years_exp),
             "fit_score": fit_score,
             "resume_excerpt": record.resume_markdown[:2000],
         }
@@ -86,6 +92,10 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
     def compare_candidates(names: list[str]) -> dict:
         """Return a side-by-side comparison of two or more named candidates."""
         found, missing = [], []
+        def _safe_float(v):
+            if v == -1.0 or v is None: return None
+            return float(v)
+            
         for n in names:
             r = lookup.get(n)
             if not r:
@@ -95,14 +105,16 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
                 try:
                     row = results_df[results_df["Candidate Name"] == n]
                     if not row.empty:
-                        fit_score = row.iloc[0].get("Fit Score (%)", "N/A")
+                        val = row.iloc[0].get("Fit Score (%)", "N/A")
+                        if hasattr(val, "item"): val = val.item()
+                        fit_score = val
                 except:
                     pass
                 found.append({
                     "name": r.name, 
-                    "cgpa": r.cgpa, 
+                    "cgpa": _safe_float(r.cgpa), 
                     "fit_score": fit_score,
-                    "years_experience": r.years_exp, 
+                    "years_experience": _safe_float(r.years_exp), 
                     "degree": r.degree
                 })
         return {"candidates": found, "not_found": missing}
