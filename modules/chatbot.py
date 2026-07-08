@@ -302,25 +302,32 @@ def chat_with_assistant(
     try:
         response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
 
-        max_hops = 6
+        max_hops = 3
         hops = 0
         
         while response.function_calls and hops < max_hops:
-            call = response.function_calls[0]
-            fn = tool_registry.get(call.name)
-            
-            if fn:
-                try:
-                    result = fn(**call.args)
-                except Exception as e:
-                    result = {"error": str(e)}
-            else:
-                result = {"error": f"Unknown tool '{call.name}'"}
-                
-            trace.append({"tool": call.name, "args": dict(call.args), "result": result})
-
+            # The model's message containing the tool calls MUST be appended first
             contents.append(response.candidates[0].content)
-            contents.append(types.Content(role="user", parts=[types.Part.from_function_response(name=call.name, response=result)]))
+            
+            function_responses = []
+            for call in response.function_calls:
+                fn = tool_registry.get(call.name)
+                
+                if fn:
+                    try:
+                        result = fn(**call.args)
+                    except Exception as e:
+                        result = {"error": str(e)}
+                else:
+                    result = {"error": f"Unknown tool '{call.name}'"}
+                    
+                trace.append({"tool": call.name, "args": dict(call.args), "result": result})
+                function_responses.append(
+                    types.Part.from_function_response(name=call.name, response=result)
+                )
+
+            # Append all function responses in a single turn to support parallel tool calling
+            contents.append(types.Content(role="user", parts=function_responses))
 
             response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
             hops += 1
