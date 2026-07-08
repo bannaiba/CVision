@@ -905,3 +905,35 @@ def load_mock_candidates() -> list[CandidateRecord]:
             resume_drive_url="",
         ),
     ]
+
+def export_results_to_sheet(sheet_id: str, credentials_path: str, results_df: pd.DataFrame, candidates: list, selected_names: list, email_status: dict, tab_prefix: str = "CVision Database") -> None:
+    """
+    Exports the analyzed results to a new tab in the Google Sheet.
+    Includes a timestamp of when it was saved.
+    """
+    from datetime import datetime
+    import gspread
+    
+    client = _get_gspread_client(credentials_path, readonly=False)
+    sheet = client.open_by_key(sheet_id)
+    
+    timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    worksheet_title = f"{tab_prefix} - {timestamp_str}"
+    
+    export_df = results_df.copy()
+    export_df["Export Timestamp"] = timestamp_str
+    
+    # Fill NA values so gspread doesn't crash on NaN
+    export_df = export_df.fillna("")
+    
+    data = [export_df.columns.values.tolist()] + export_df.values.tolist()
+    
+    try:
+        worksheet = sheet.add_worksheet(title=worksheet_title, rows=max(100, len(data) + 10), cols=max(20, len(export_df.columns) + 5))
+    except gspread.exceptions.APIError as e:
+        # If worksheet with this exact timestamp exists (unlikely), append a random suffix
+        import random
+        worksheet_title += f"_{random.randint(100,999)}"
+        worksheet = sheet.add_worksheet(title=worksheet_title, rows=max(100, len(data) + 10), cols=max(20, len(export_df.columns) + 5))
+
+    worksheet.update(values=data, range_name="A1")
