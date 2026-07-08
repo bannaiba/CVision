@@ -178,17 +178,11 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
             "message": f"Successfully sent {sent_acc} acceptance emails and {sent_rej} rejection emails."
         }
 
-    def export_results_to_google_sheet(user_confirmed: bool = False) -> dict:
+    def export_results_to_google_sheet() -> dict:
         """
         Exports the current analysis results to the configured Google Sheet.
-        Requires user_confirmed=True to actually export.
         """
-        if not user_confirmed:
-            return {
-                "status": "CONFIRMATION_REQUIRED",
-                "message": "You must ask the user to confirm they want to export the results. If they say yes, call this tool again with user_confirmed=True."
-            }
-            
+
         sheet_id = os.getenv("GOOGLE_SHEET_ID")
         creds_path = os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json")
         if not sheet_id:
@@ -226,7 +220,8 @@ def build_system_prompt(results_df: pd.DataFrame, job_description: str) -> str:
         "- If the user asks a broad question (e.g., 'Who has the most experience?'), CALL `get_all_candidates_summary()` to check everyone at once instead of checking one by one.",
         "- Whenever you need a candidate's full profile or resume text, CALL `get_candidate_details(name)`.",
         "- Do not guess candidate details if they are not in the table below. Call the tool.",
-        "- If the user asks to send emails or export, CALL the relevant tool with user_confirmed=False first. If they already said yes, call it with user_confirmed=True.",
+        "- If the user asks to send emails, CALL the relevant tool with user_confirmed=False first. If they already said yes, call it with user_confirmed=True.",
+        "- If the user asks to export to database, CALL the export tool immediately.",
         "",
         "---",
         "# JOB DESCRIPTION",
