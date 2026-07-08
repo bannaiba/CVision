@@ -1920,7 +1920,11 @@ def main() -> None:
             )
         else:
             st.success(f"🔗 Connected to Sheet: `{config['sheet_id'][:20]}...`")
-            st.link_button("📂 Open Database (Google Sheet)", "https://docs.google.com/spreadsheets/d/1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ/edit?usp=sharing")
+            col_db, col_form = st.columns(2)
+            with col_db:
+                st.link_button("📂 Export Database", "https://docs.google.com/spreadsheets/d/1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ/edit?usp=sharing", use_container_width=True)
+            with col_form:
+                st.link_button("📋 Form Responses", f"https://docs.google.com/spreadsheets/d/{config['sheet_id']}/edit?usp=sharing", use_container_width=True)
         
         st.session_state["sheet_id"] = config["sheet_id"]
         st.session_state["min_cgpa"] = config["min_cgpa"]
