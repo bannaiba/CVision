@@ -1920,7 +1920,7 @@ def main() -> None:
             )
         else:
             st.success(f"🔗 Connected to Sheet: `{config['sheet_id'][:20]}...`")
-            st.link_button("📂 Open Database (Google Sheet)", f"https://docs.google.com/spreadsheets/d/{config['sheet_id']}/edit?usp=sharing")
+            st.link_button("📂 Open Database (Google Sheet)", "https://docs.google.com/spreadsheets/d/1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ/edit?usp=sharing")
         
         st.session_state["sheet_id"] = config["sheet_id"]
         st.session_state["min_cgpa"] = config["min_cgpa"]

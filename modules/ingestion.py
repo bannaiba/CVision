@@ -915,7 +915,8 @@ def export_results_to_sheet(sheet_id: str, credentials_path: str, results_df: pd
     import gspread
     
     client = _get_gspread_client(credentials_path, readonly=False)
-    sheet = client.open_by_key(sheet_id)
+    # Ignore the input sheet_id and hardcode to the Export Database
+    sheet = client.open_by_key("1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ")
     
     timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     worksheet_title = f"{tab_prefix} - {timestamp_str}"
