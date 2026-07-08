@@ -333,9 +333,13 @@ def chat_with_assistant(
             response = client.models.generate_content(model="gemini-2.5-flash-lite", contents=contents, config=config)
             hops += 1
 
-        return response.text or "Done.", trace
+        if not response.text:
+            return "⚠️ **Model Error:** The Lite model processed the tools but failed to generate a text response. Please try asking again.", trace
+        return response.text, trace
 
     except APIError as e:
         if e.code == 429:
-            return "⚠️ **Rate Limit Reached:** You have exceeded the free tier requests per minute quota for Gemini. Please wait about 30 seconds and try again.", trace
+            return "⚠️ **Rate Limit Reached:** You have exceeded the free tier quota for this model. Please try again later.", trace
+        if e.code == 503:
+            return "⚠️ **Server Overloaded:** Google's servers for this model are currently experiencing high demand. Please wait a moment and try again.", trace
         raise e
