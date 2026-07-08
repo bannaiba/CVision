@@ -127,7 +127,8 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
                     "cgpa": _safe_float(r.cgpa), 
                     "fit_score": fit_score,
                     "years_experience": _safe_float(r.years_exp), 
-                    "degree": r.degree
+                    "degree": r.degree,
+                    "resume_excerpt": r.resume_markdown[:2000]
                 })
         return {"candidates": found, "not_found": missing}
 
