@@ -301,7 +301,7 @@ def chat_with_assistant(
     from google.genai.errors import APIError
 
     try:
-        response = client.models.generate_content(model="gemini-2.5-flash-lite", contents=contents, config=config)
+        response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
 
         max_hops = 3
         hops = 0
@@ -330,7 +330,7 @@ def chat_with_assistant(
             # Append all function responses in a single turn to support parallel tool calling
             contents.append(types.Content(role="user", parts=function_responses))
 
-            response = client.models.generate_content(model="gemini-2.5-flash-lite", contents=contents, config=config)
+            response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
             hops += 1
 
         if not response.text:
