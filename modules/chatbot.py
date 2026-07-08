@@ -59,6 +59,18 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
     """
     lookup = {c.name: c for c in candidates}
     
+    def get_all_candidates_summary() -> dict:
+        """Return a summary of all candidates (name, email, cgpa, years_experience, degree). Use this when asked questions about 'who has the most X' or comparing everyone."""
+        summary = []
+        for c in candidates:
+            summary.append({
+                "name": c.name,
+                "cgpa": c.cgpa if c.cgpa != -1.0 else None,
+                "years_experience": c.years_exp if c.years_exp != -1.0 else None,
+                "degree": c.degree
+            })
+        return {"candidates": summary}
+
     def get_candidate_details(name: str) -> dict:
         """Return full profile details and resume excerpt for one candidate by exact name."""
         record = lookup.get(name)
@@ -196,7 +208,7 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
         except Exception as e:
             return {"error": str(e)}
 
-    return [get_candidate_details, compare_candidates, search_by_skill, get_filtered_candidates, send_decision_emails, export_results_to_google_sheet]
+    return [get_all_candidates_summary, get_candidate_details, compare_candidates, search_by_skill, get_filtered_candidates, send_decision_emails, export_results_to_google_sheet]
 
 # ── System Prompt Builder ─────────────────────────────────────────────────────
 
@@ -209,7 +221,8 @@ def build_system_prompt(results_df: pd.DataFrame, job_description: str) -> str:
         "Your job is to help the recruiter analyze, compare, and make decisions about candidates.",
         "",
         "## Tool Calling Guidelines:",
-        "- You have tools to get full candidate details, compare candidates, search by skill, send emails, and export.",
+        "- You are PROACTIVE. If you need information to answer the user's question, CALL THE TOOLS IMMEDIATELY. Do not ask the user for permission to look up data.",
+        "- If the user asks a broad question (e.g., 'Who has the most experience?'), CALL `get_all_candidates_summary()` to check everyone at once instead of checking one by one.",
         "- Whenever you need a candidate's full profile or resume text, CALL `get_candidate_details(name)`.",
         "- Do not guess candidate details if they are not in the table below. Call the tool.",
         "- If the user asks to send emails or export, CALL the relevant tool with user_confirmed=False first. If they already said yes, call it with user_confirmed=True.",
@@ -284,29 +297,37 @@ def chat_with_assistant(
     tool_registry = {fn.__name__: fn for fn in tools}
     trace = []
 
-    response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
+    from google.genai.errors import APIError
 
-    max_hops = 6
-    hops = 0
-    
-    while response.function_calls and hops < max_hops:
-        call = response.function_calls[0]
-        fn = tool_registry.get(call.name)
-        
-        if fn:
-            try:
-                result = fn(**call.args)
-            except Exception as e:
-                result = {"error": str(e)}
-        else:
-            result = {"error": f"Unknown tool '{call.name}'"}
-            
-        trace.append({"tool": call.name, "args": dict(call.args), "result": result})
-
-        contents.append(response.candidates[0].content)
-        contents.append(types.Content(role="user", parts=[types.Part.from_function_response(name=call.name, response=result)]))
-
+    try:
         response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
-        hops += 1
 
-    return response.text, trace
+        max_hops = 6
+        hops = 0
+        
+        while response.function_calls and hops < max_hops:
+            call = response.function_calls[0]
+            fn = tool_registry.get(call.name)
+            
+            if fn:
+                try:
+                    result = fn(**call.args)
+                except Exception as e:
+                    result = {"error": str(e)}
+            else:
+                result = {"error": f"Unknown tool '{call.name}'"}
+                
+            trace.append({"tool": call.name, "args": dict(call.args), "result": result})
+
+            contents.append(response.candidates[0].content)
+            contents.append(types.Content(role="user", parts=[types.Part.from_function_response(name=call.name, response=result)]))
+
+            response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
+            hops += 1
+
+        return response.text or "Done.", trace
+
+    except APIError as e:
+        if e.code == 429:
+            return "⚠️ **Rate Limit Reached:** You have exceeded the free tier requests per minute quota for Gemini. Please wait about 30 seconds and try again.", trace
+        raise e
