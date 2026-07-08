@@ -62,7 +62,7 @@ from modules.embedding import (
     extract_skills_from_markdown,
     ACTIVE_BACKEND,
 )
-from modules.chatbot import build_system_prompt, chat_with_assistant
+from modules.chatbot import build_system_prompt, chat_with_assistant, build_agent_tools
 import os
 import pickle
 import json
@@ -1020,9 +1020,7 @@ def _render_chatbot(
     ):
         st.session_state["chatbot_system_prompt"] = build_system_prompt(
             results_df=results_df,
-            candidates=candidates,
             job_description=job_description,
-            filtered=filtered,
         )
         st.session_state["chatbot_results_hash"] = results_hash
         st.session_state["chat_history"] = []
@@ -1044,18 +1042,30 @@ def _render_chatbot(
         with st.chat_message("user"):
             st.markdown(user_input)
 
+        # Build tools bound to current session data
+        tools = build_agent_tools(candidates, filtered, results_df)
+
         # Get LLM response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
-                    response = chat_with_assistant(
+                    response, trace = chat_with_assistant(
                         user_message=user_input,
                         chat_history=st.session_state.get("chat_history", []),
                         system_prompt=st.session_state["chatbot_system_prompt"],
+                        tools=tools,
                     )
+                    
+                    if trace:
+                        with st.expander(f"🔧 Agent used {len(trace)} tool call(s)", expanded=False):
+                            for t in trace:
+                                st.code(f"{t['tool']}({t['args']}) → {t['result']}", language="json")
+                                
                     st.markdown(response)
 
                     # Update chat history
+                    # We store the raw texts in chat_history, but for proper tool tracking across 
+                    # multiple turns we'd store the rich types. For this demo, simple text is okay.
                     st.session_state.setdefault("chat_history", []).extend([
                         {"role": "user", "parts": [user_input]},
                         {"role": "model", "parts": [response]},
