@@ -159,19 +159,31 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
         acc_objs = [lookup[n] for n in accepted_names if n in lookup]
         rej_objs = [lookup[n] for n in rejected_names if n in lookup]
         
-        sent_acc, sent_rej = 0, 0
+        sent_acc, sent_rej, failed = 0, 0, 0
         
         for c in acc_objs:
             if c.email:
                 body = ACCEPTANCE_TEMPLATE.format(name=c.name, position=c.position_applied or "the open position", company_name="CVision")
-                send_email(c.email, "Interview Invitation", body, dry_run=False)
-                sent_acc += 1
+                success = send_email(c.email, "Interview Invitation", body, dry_run=False)
+                if success:
+                    sent_acc += 1
+                else:
+                    failed += 1
                 
         for c in rej_objs:
             if c.email:
                 body = REJECTION_FINAL_TEMPLATE.format(name=c.name, position=c.position_applied or "the open position", company_name="CVision")
-                send_email(c.email, "Application Update", body, dry_run=False)
-                sent_rej += 1
+                success = send_email(c.email, "Application Update", body, dry_run=False)
+                if success:
+                    sent_rej += 1
+                else:
+                    failed += 1
+        
+        if failed > 0:
+            return {
+                "status": "PARTIAL_ERROR",
+                "message": f"Sent {sent_acc} acceptances and {sent_rej} rejections, but {failed} emails failed. Ask the user to check their SMTP App Password in Streamlit Secrets."
+            }
         
         return {
             "status": "SUCCESS",
