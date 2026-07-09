@@ -98,7 +98,7 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
             "degree": record.degree,
             "years_experience": _safe_float(record.years_exp),
             "fit_score": fit_score,
-            "resume_excerpt": record.resume_markdown[:2000],
+            "full_resume_text": record.resume_markdown,
         }
 
     def compare_candidates(names: list[str]) -> dict:
@@ -128,7 +128,7 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
                     "fit_score": fit_score,
                     "years_experience": _safe_float(r.years_exp), 
                     "degree": r.degree,
-                    "resume_excerpt": r.resume_markdown[:2000]
+                    "full_resume_text": r.resume_markdown
                 })
         return {"candidates": found, "not_found": missing}
 
