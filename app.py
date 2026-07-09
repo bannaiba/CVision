@@ -177,8 +177,18 @@ def _inject_css() -> None:
         color: var(--text-main) !important;
     }}
     
-    .stApp > header {{
+    [data-testid="stHeader"] {{
         background-color: transparent !important;
+    }}
+    
+    /* Aggressive text color overrides for Streamlit elements */
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stMarkdownContainer"] p,
+    .stRadio label p,
+    .stCheckbox label p,
+    .stToggle label p,
+    [data-testid="stSidebar"] p {{
+        color: var(--text-main) !important;
     }}
 
     .stApp {{
@@ -279,7 +289,13 @@ def _inject_css() -> None:
     .stSelectbox ul {{ background: var(--sidebar-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-color) !important; }}
 
     [data-testid="stExpander"] {{ border: 1px solid var(--border-color) !important; border-radius: 12px !important; background: var(--card-bg) !important; }}
-    .stAlert {{ border-radius: 10px !important; }}
+    
+    [data-testid="stAlert"] {{ 
+        border-radius: 10px !important; 
+        background: var(--card-bg) !important; 
+        border: 1px solid var(--border-color) !important; 
+    }}
+    [data-testid="stAlert"] p, [data-testid="stAlert"] span {{ color: var(--text-main) !important; }}
     [data-testid="stDataFrame"] {{ border: 1px solid var(--border-color) !important; border-radius: 12px !important; overflow: hidden !important; }}
     </style>
     """, unsafe_allow_html=True)
