@@ -299,7 +299,8 @@ def _inject_css() -> None:
 
     .stButton > button {{
         background: var(--btn-bg) !important; border: none !important; color: white !important;
-        font-weight: 600 !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important; cursor: pointer !important;
+        font-weight: 600 !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; 
+        transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important; cursor: pointer !important;
     }}
     div[data-testid="stButton"] button *,
     div[data-testid="stButton"] button p,
@@ -308,9 +309,10 @@ def _inject_css() -> None:
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
     }}
-    .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important; }}
-    .stButton > button:active {{ transform: translateY(0px) scale(0.98) !important; opacity: 1 !important; }}
-    .stButton > button:disabled {{ opacity: 0.65 !important; cursor: wait !important; }}
+    .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-2px) !important; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15) !important; }}
+    .stButton > button:active {{ transform: translateY(0px) scale(0.96) !important; opacity: 1 !important; box-shadow: none !important; }}
+    /* Streamlit disables buttons during execution. Styling this state provides immediate click feedback. */
+    .stButton > button:disabled {{ transform: scale(0.98) !important; opacity: 0.7 !important; filter: grayscale(20%) !important; cursor: wait !important; box-shadow: none !important; }}
 
     .stTextArea textarea, .stTextInput input, .stSelectbox > div > div {{
         background: var(--input-bg) !important; border: 1px solid var(--border-color) !important; color: var(--text-main) !important; border-radius: 10px !important;
