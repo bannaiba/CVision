@@ -306,10 +306,13 @@ def export_results_to_sheet(
     Creates the tab if it does not exist.
     """
     import datetime
+    from zoneinfo import ZoneInfo
     client = _get_gspread_client(credentials_path, readonly=False)
     sheet = client.open_by_key(sheet_id)
     
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")
+    bd_tz = ZoneInfo("Asia/Dhaka")
+    now_bd = datetime.datetime.now(bd_tz)
+    timestamp = now_bd.strftime("%Y-%m-%d %H.%M.%S")
     tab_name = f"{tab_prefix} - {timestamp}"
     
     try:
@@ -324,7 +327,7 @@ def export_results_to_sheet(
     phone_map = {c.name: (c.phone or "N/A") for c in candidates}
     
     # We can use a more readable timestamp format for the rows
-    row_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    row_timestamp = now_bd.strftime("%Y-%m-%d %H:%M:%S")
     
     # Prepare rows
     rows_to_insert = [headers]
