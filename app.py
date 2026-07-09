@@ -146,6 +146,7 @@ def _inject_css() -> None:
         --input-bg: #ffffff;
         --divider-bg: #3e2723;
         --divider-solid: #3e2723;
+        --divider-thickness: 2px;
         --hero-title: #3e2723;
         --tag-bg: #d7ccc8;
         --sidebar-heading: #3e2723;
@@ -169,7 +170,8 @@ def _inject_css() -> None:
         --card-bg: rgba(255,255,255,0.03);
         --input-bg: rgba(255,255,255,0.03);
         --divider-bg: linear-gradient(90deg, rgba(99,102,241,0.3), transparent);
-        --divider-solid: rgba(99,102,241,0.4);
+        --divider-solid: var(--border-color);
+        --divider-thickness: 1px;
         --hero-title: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
         --tag-bg: rgba(99,102,241,0.12);
         --sidebar-heading: #a5b4fc;
@@ -289,7 +291,7 @@ def _inject_css() -> None:
 
     hr, .glass-divider, [data-testid="stMarkdownContainer"] hr {{
         border: none !important;
-        border-top: 2px solid var(--divider-solid) !important;
+        border-top: var(--divider-thickness) solid var(--divider-solid) !important;
         background-color: transparent !important;
         margin: 1.5rem 0 !important;
         opacity: 1 !important;
