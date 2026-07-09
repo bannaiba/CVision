@@ -135,19 +135,26 @@ def _inject_css() -> None:
     
     if light_mode:
         theme_vars = """
-        --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #f4f0ea 50%, #eae3d8 100%);
-        --sidebar-bg: #f5f1eb;
-        --text-main: #2c2925;
-        --text-muted: #57534e;
-        --text-subtle: #78716c;
-        --border-color: rgba(99, 102, 241, 0.4);
-        --border-hover: rgba(99, 102, 241, 0.8);
+        --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        --sidebar-bg: #f8fafc;
+        --text-main: #020617;
+        --text-muted: #1e293b;
+        --text-subtle: #334155;
+        --border-color: rgba(15, 23, 42, 0.2);
+        --border-hover: rgba(15, 23, 42, 0.4);
         --card-bg: #ffffff;
         --input-bg: #ffffff;
-        --divider-bg: linear-gradient(90deg, rgba(99,102,241,0.5), transparent);
-        --hero-title: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #db2777 100%);
-        --tag-bg: rgba(99,102,241,0.15);
-        --sidebar-heading: #4f46e5;
+        --divider-bg: linear-gradient(90deg, rgba(15,23,42,0.15), transparent);
+        --hero-title: #020617;
+        --tag-bg: #e2e8f0;
+        --sidebar-heading: #020617;
+        --hero-badge-text: #020617;
+        --skill-tag-text: #020617;
+        --step-number-bg: #0f172a;
+        --rank-badge-bg: #0f172a;
+        --score-bar-fill: #0f172a;
+        --kpi-value: #020617;
+        --btn-bg: #0f172a;
         """
     else:
         theme_vars = """
@@ -164,6 +171,13 @@ def _inject_css() -> None:
         --hero-title: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
         --tag-bg: rgba(99,102,241,0.12);
         --sidebar-heading: #a5b4fc;
+        --hero-badge-text: #818cf8;
+        --skill-tag-text: #a5b4fc;
+        --step-number-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
+        --rank-badge-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
+        --score-bar-fill: linear-gradient(90deg, #6366f1, #c084fc);
+        --kpi-value: linear-gradient(135deg, #818cf8, #c084fc);
+        --btn-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
         """
 
     st.markdown(f"""
@@ -229,13 +243,13 @@ def _inject_css() -> None:
     .hero-subtitle {{ color: var(--text-subtle); font-size: 1rem; margin-top: 0.5rem; font-weight: 400; letter-spacing: 0.5px; }}
     .hero-badge {{
         display: inline-block; background: var(--tag-bg); border: 1px solid var(--border-color);
-        color: #818cf8; border-radius: 20px; padding: 4px 14px; font-size: 0.75rem; font-weight: 500; margin-top: 0.75rem; letter-spacing: 0.5px;
+        color: var(--hero-badge-text); border-radius: 20px; padding: 4px 14px; font-size: 0.75rem; font-weight: 600; margin-top: 0.75rem; letter-spacing: 0.5px;
     }}
 
     .step-label {{ display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem; }}
     .step-number {{
         display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
-        border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+        border-radius: 50%; background: var(--step-number-bg); color: white; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
     }}
     .step-title {{ color: var(--text-main); font-size: 1rem; font-weight: 600; }}
 
@@ -245,7 +259,7 @@ def _inject_css() -> None:
     }}
     .kpi-card:hover {{ border-color: var(--border-hover); transform: translateY(-2px); }}
     .kpi-value {{
-        font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #818cf8, #c084fc);
+        font-size: 2rem; font-weight: 800; background: var(--kpi-value);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1;
     }}
     .kpi-label {{ color: var(--text-subtle); font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }}
@@ -256,25 +270,25 @@ def _inject_css() -> None:
 
     .skill-tag {{
         display: inline-block; background: var(--tag-bg); border: 1px solid var(--border-color);
-        color: #6366f1; border-radius: 20px; padding: 3px 12px; font-size: 0.72rem; font-weight: 600; margin: 2px 3px; white-space: nowrap; transition: background 0.2s ease;
+        color: var(--skill-tag-text); border-radius: 20px; padding: 3px 12px; font-size: 0.72rem; font-weight: 600; margin: 2px 3px; white-space: nowrap; transition: background 0.2s ease;
     }}
-    .skill-tag:hover {{ background: rgba(99,102,241,0.25); }}
+    .skill-tag:hover {{ background: rgba(15, 23, 42, 0.1); }}
 
     .rank-badge {{
         display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
-        border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-weight: 700; font-size: 0.8rem;
+        border-radius: 50%; background: var(--rank-badge-bg); color: white; font-weight: 700; font-size: 0.8rem;
     }}
 
     .badge-pass {{ display: inline-block; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: #059669; border-radius: 12px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }}
     .badge-fail {{ display: inline-block; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #dc2626; border-radius: 12px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }}
 
     .score-bar-track {{ background: rgba(100,100,100,0.15); border-radius: 4px; height: 6px; overflow: hidden; }}
-    .score-bar-fill {{ height: 100%; border-radius: 4px; background: linear-gradient(90deg, #6366f1, #c084fc); transition: width 0.6s ease; }}
+    .score-bar-fill {{ height: 100%; border-radius: 4px; background: var(--score-bar-fill); transition: width 0.6s ease; }}
 
     .glass-divider {{ border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0; }}
 
     .stButton > button {{
-        background: linear-gradient(135deg, #6366f1, #8b5cf6) !important; border: none !important; color: white !important;
+        background: var(--btn-bg) !important; border: none !important; color: white !important;
         font-weight: 600 !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important; cursor: pointer !important;
     }}
     .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important; }}
