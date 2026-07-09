@@ -135,18 +135,19 @@ def _inject_css() -> None:
     
     if light_mode:
         theme_vars = """
-        --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
-        --sidebar-bg: rgba(248, 250, 252, 0.97);
-        --text-main: #1e293b;
-        --text-muted: #475569;
-        --text-subtle: #64748b;
-        --border-color: rgba(99, 102, 241, 0.3);
-        --border-hover: rgba(99, 102, 241, 0.6);
-        --card-bg: rgba(255, 255, 255, 0.6);
-        --input-bg: rgba(255, 255, 255, 0.8);
+        --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #f4f0ea 50%, #eae3d8 100%);
+        --sidebar-bg: #f5f1eb;
+        --text-main: #2c2925;
+        --text-muted: #57534e;
+        --text-subtle: #78716c;
+        --border-color: rgba(99, 102, 241, 0.4);
+        --border-hover: rgba(99, 102, 241, 0.8);
+        --card-bg: #ffffff;
+        --input-bg: #ffffff;
         --divider-bg: linear-gradient(90deg, rgba(99,102,241,0.5), transparent);
         --hero-title: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #db2777 100%);
         --tag-bg: rgba(99,102,241,0.15);
+        --sidebar-heading: #4f46e5;
         """
     else:
         theme_vars = """
@@ -162,6 +163,7 @@ def _inject_css() -> None:
         --divider-bg: linear-gradient(90deg, rgba(99,102,241,0.3), transparent);
         --hero-title: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
         --tag-bg: rgba(99,102,241,0.12);
+        --sidebar-heading: #a5b4fc;
         """
 
     st.markdown(f"""
@@ -205,19 +207,18 @@ def _inject_css() -> None:
     .stStatusWidget, [data-testid="stStatusWidget"] {{ display: none !important; }}
 
     @keyframes cvision-spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
-    @keyframes cvision-pulse {{ 0%, 100% {{ opacity: 0.7; }} 50% {{ opacity: 1; }} }}
-    
-    [data-testid="stSpinner"] > div {{ display: flex !important; align-items: center !important; gap: 12px !important; }}
-    [data-testid="stSpinner"] > div > svg, [data-testid="stSpinner"] > div > i {{ animation: cvision-spin 1s linear infinite !important; }}
-    [data-testid="stSpinner"] > div > span, [data-testid="stSpinner"] > div > p {{ animation: cvision-pulse 1.5s ease-in-out infinite !important; color: #a5b4fc !important; font-weight: 500 !important; }}
-
     [data-testid="stSidebar"] {{
         background: var(--sidebar-bg) !important;
         border-right: 1px solid var(--border-color) !important;
     }}
     [data-testid="stSidebar"] .stMarkdown h3 {{
-        color: #a5b4fc; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;
+        color: var(--sidebar-heading); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;
     }}
+    @keyframes cvision-pulse {{ 0%, 100% {{ opacity: 0.7; }} 50% {{ opacity: 1; }} }}
+    
+    [data-testid="stSpinner"] > div {{ display: flex !important; align-items: center !important; gap: 12px !important; }}
+    [data-testid="stSpinner"] > div > svg, [data-testid="stSpinner"] > div > i {{ animation: cvision-spin 1s linear infinite !important; }}
+    [data-testid="stSpinner"] > div > span, [data-testid="stSpinner"] > div > p {{ animation: cvision-pulse 1.5s ease-in-out infinite !important; color: #a5b4fc !important; font-weight: 500 !important; }}
 
     .hero-container {{ text-align: center; padding: 2rem 0 1rem; }}
     .hero-title {{
