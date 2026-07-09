@@ -312,9 +312,32 @@ def chat_with_assistant(
     trace = []
 
     from google.genai.errors import APIError
+    import time
+
+    def _generate_with_retry(contents, config, max_retries=3):
+        for attempt in range(max_retries):
+            try:
+                resp = client.models.generate_content(model=model_name, contents=contents, config=config)
+                # Retry if empty response without function calls
+                if not resp.function_calls:
+                    try:
+                        txt = resp.text
+                        if not txt:
+                            raise ValueError("Empty text")
+                    except ValueError:
+                        if attempt < max_retries - 1:
+                            time.sleep(2)
+                            continue
+                return resp
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                raise e
+        raise ValueError("Failed to generate content after retries")
 
     try:
-        response = client.models.generate_content(model=model_name, contents=contents, config=config)
+        response = _generate_with_retry(contents=contents, config=config)
 
         max_hops = 3
         hops = 0
@@ -343,7 +366,7 @@ def chat_with_assistant(
             # Append all function responses in a single turn to support parallel tool calling
             contents.append(types.Content(role="user", parts=function_responses))
 
-            response = client.models.generate_content(model=model_name, contents=contents, config=config)
+            response = _generate_with_retry(contents=contents, config=config)
             hops += 1
 
         # Check if response.text raises ValueError (no text parts) or is empty
