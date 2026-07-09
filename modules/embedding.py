@@ -144,6 +144,7 @@ def load_embedding_model(model_name: str = DEFAULT_MODEL_NAME):
             logger.info("fastembed model ready.")
             return model
         except Exception as exc:
+            print(f"\n\n🚨 FASTEMBED CRASHED DURING LOAD: {exc}\n\n")
             logger.warning("fastembed load failed: %s — falling back to TF-IDF.", exc)
             return None
 
