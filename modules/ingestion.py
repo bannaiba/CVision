@@ -914,14 +914,16 @@ def export_results_to_sheet(sheet_id: str, credentials_path: str, results_df: pd
     Exports the analyzed results to a new tab in the Google Sheet.
     Includes a timestamp of when it was saved.
     """
-    from datetime import datetime
+    from datetime import datetime, timezone, timedelta
     import gspread
     
     client = _get_gspread_client(credentials_path, readonly=False)
     # Ignore the input sheet_id and hardcode to the Export Database
     sheet = client.open_by_key("1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ")
     
-    timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Bangladesh Time is UTC+6
+    bst_tz = timezone(timedelta(hours=6))
+    timestamp_str = datetime.now(bst_tz).strftime("%Y-%m-%d %H:%M:%S")
     worksheet_title = f"{tab_prefix} - {timestamp_str}"
     
     export_df = results_df.copy()

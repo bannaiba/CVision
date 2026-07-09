@@ -58,6 +58,8 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
     Builds the tools for Gemini to call, bound to the current session data.
     """
     lookup = {c.name: c for c in candidates}
+    for c in filtered:
+        lookup[c.name] = c
     
     def get_all_candidates_summary() -> dict:
         """Return a summary of all candidates (name, email, cgpa, years_experience, degree). Use this when asked questions about 'who has the most X' or comparing everyone."""
@@ -232,7 +234,8 @@ def build_system_prompt(results_df, job_description: str) -> str:
         "- If the user asks a broad question (e.g., 'Who has the most experience?'), CALL `get_all_candidates_summary()` to check everyone at once instead of checking one by one.",
         "- Whenever you need a candidate's full profile or resume text, CALL `get_candidate_details(name)`.",
         "- Do not guess candidate details if they are not in the table below. Call the tool.",
-        "- If the user asks to send emails, CALL the relevant tool with user_confirmed=False first. If they already said yes, call it with user_confirmed=True.",
+        "- If the user asks to send emails, CALL the relevant tool with user_confirmed=False first. IMPORTANT: Do NOT draft or write the email yourself in your response. The system uses hardcoded templates. Simply ask the user 'Shall I send the standard acceptance/rejection email to [Name]?'",
+        "- If they already said yes, call it with user_confirmed=True.",
         "- If the user asks to export to database, CALL the export tool immediately.",
         "",
         "CRITICAL RULES:",
