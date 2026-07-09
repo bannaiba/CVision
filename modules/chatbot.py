@@ -337,7 +337,8 @@ def chat_with_assistant(
         if not response_text:
             if trace:
                 return "✅ Action completed successfully.", trace
-            return "⚠️ **Model Error:** The AI processed the tools but returned an empty response.", trace
+            print(f"\n\n🚨 EMPTY RESPONSE DEBUG: {response.candidates[0] if response.candidates else 'No candidates'}\n\n")
+            return "⚠️ **Model Error:** The AI returned an empty response (see console logs).", trace
             
         return response_text, trace
 
