@@ -148,40 +148,28 @@ def send_email(
         )
         return True
 
-    # Use Google Apps Script Webhook on Render to bypass SMTP port blocking
-    webhook_url = "https://script.google.com/macros/s/AKfycbzuyIUbmsPItQNPloz--W5kEtWWb5eOeSl5Ugu0ceJ2OHVHUL2wn8Gbf8Uj6x9KrK7Z/exec"
-    
-    
-    # The webhook sends plain text, so do not use HTML tags.
-    # We use \r\n to ensure Gmail respects the line breaks in plain text.
-    spaced_body = body.replace("\n", "\r\n")
-    
-    # Create an HTML version by converting newlines to paragraphs/breaks
-    html_body = "<p>" + body.replace("\n\n", "</p><p>").replace("\n", "<br>") + "</p>"
-    
-    payload = {
-        "to": to_email,
-        "subject": subject,
-        "body": spaced_body,
-        "htmlBody": html_body,
-        "company_name": "CVision Recruitment"
-    }
-
-    try:
-        import requests
-        response = requests.post(webhook_url, json=payload, timeout=15)
-        response.raise_for_status()
-        
-        result = response.json()
-        if result.get("status") == "success":
-            logger.info("Email sent via Webhook to: %s — Subject: %s", to_email, subject)
-            return True
-        else:
-            logger.error("Webhook failed to send email to %s: %s", to_email, result)
+    if not smtp_config:
+        try:
+            smtp_config = _get_smtp_config()
+        except ValueError as e:
+            logger.error("SMTP config missing: %s", e)
             return False
 
+    msg = MIMEMultipart()
+    msg["From"] = smtp_config["email"]
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(smtp_config["host"], smtp_config["port"], context=context) as server:
+            server.login(smtp_config["email"], smtp_config["password"])
+            server.send_message(msg)
+        logger.info("Native SMTP email sent to: %s — Subject: %s", to_email, subject)
+        return True
     except Exception as exc:
-        logger.error("Failed to trigger email webhook for %s: %s", to_email, exc)
+        logger.error("Failed to send native SMTP email to %s: %s", to_email, exc)
         return False
 
 
