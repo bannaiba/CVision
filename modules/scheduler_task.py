@@ -2,6 +2,7 @@ import logging
 import json
 import pickle
 import os
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -34,7 +35,10 @@ def _get_gspread_client():
         logger.debug(f"Failed to auth gspread for config sync: {e}")
         return None
 
-def _load_scheduler_config() -> dict | None:
+_CONFIG_CACHE = None
+_CONFIG_CACHE_TIME = 0
+
+def _load_scheduler_config(force_refresh=False) -> dict | None:
     """
     Load scheduler configuration from multiple sources (priority order):
     1. Google Sheet tab 'CVision_Config' (persists seamlessly without env var updates).
@@ -42,6 +46,12 @@ def _load_scheduler_config() -> dict | None:
     3. scheduler_config.json file on disk (works locally).
     Returns None if no source is available.
     """
+    global _CONFIG_CACHE, _CONFIG_CACHE_TIME
+    
+    # Return from memory cache if less than 60 seconds old
+    if not force_refresh and _CONFIG_CACHE is not None and (time.time() - _CONFIG_CACHE_TIME < 60):
+        return _CONFIG_CACHE
+
     # 1. Try Google Sheet if GOOGLE_SHEET_ID is present
     sheet_id = os.getenv("GOOGLE_SHEET_ID", "").strip()
     if sheet_id:
@@ -58,6 +68,9 @@ def _load_scheduler_config() -> dict | None:
                     os.environ["SCHEDULER_CONFIG"] = raw
                     with open(CONFIG_FILE, "w") as f:
                         f.write(raw)
+                    
+                    _CONFIG_CACHE = config
+                    _CONFIG_CACHE_TIME = time.time()
                     return config
             except Exception:
                 pass  # Tab might not exist yet, fallback to next method
@@ -68,6 +81,9 @@ def _load_scheduler_config() -> dict | None:
         try:
             config = json.loads(raw)
             logger.info("Loaded scheduler config from SCHEDULER_CONFIG env var.")
+            
+            _CONFIG_CACHE = config
+            _CONFIG_CACHE_TIME = time.time()
             return config
         except json.JSONDecodeError:
             logger.error("SCHEDULER_CONFIG env var contains invalid JSON.")
@@ -78,6 +94,9 @@ def _load_scheduler_config() -> dict | None:
             with open(CONFIG_FILE, "r") as f:
                 config = json.load(f)
             logger.info(f"Loaded scheduler config from {CONFIG_FILE}.")
+            
+            _CONFIG_CACHE = config
+            _CONFIG_CACHE_TIME = time.time()
             return config
         except Exception as e:
             logger.error(f"Failed to read {CONFIG_FILE}: {e}")
