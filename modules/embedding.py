@@ -93,8 +93,7 @@ def _detect_backend() -> str:
         import fastembed  # noqa: F401
         return "fastembed"
     except ImportError as e:
-        import streamlit as st
-        st.error(f"🚨 **FATAL FASTEMBED IMPORT ERROR:** `{e}`")
+        print(f"\n\n🚨 FATAL FASTEMBED IMPORT ERROR: {e}\n\n")
         logger.warning(f"fastembed import failed: {e}")
         pass
 
