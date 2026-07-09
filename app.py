@@ -939,6 +939,7 @@ def _render_chatbot(
                         chat_history=st.session_state.get("chat_history", []),
                         system_prompt=st.session_state["chatbot_system_prompt"],
                         tools=tools,
+                        model_name=st.session_state.get("ai_model_select", "gemini-2.5-flash"),
                     )
                     
                     if trace:
