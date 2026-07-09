@@ -135,16 +135,16 @@ def _inject_css() -> None:
     
     if light_mode:
         theme_vars = """
-        --bg-gradient: linear-gradient(135deg, #fdf8f5 0%, #f3ede8 100%);
-        --sidebar-bg: #f8f3ee;
+        --bg-gradient: linear-gradient(135deg, #efe5da 0%, #e3d5c8 100%);
+        --sidebar-bg: #ece2d7;
         --text-main: #3e2723;
         --text-muted: #5d4037;
         --text-subtle: #795548;
-        --border-color: rgba(62, 39, 35, 0.2);
-        --border-hover: rgba(62, 39, 35, 0.4);
+        --border-color: rgba(62, 39, 35, 0.35);
+        --border-hover: rgba(62, 39, 35, 0.5);
         --card-bg: #ffffff;
         --input-bg: #ffffff;
-        --divider-bg: linear-gradient(90deg, rgba(62,39,35,0.15), transparent);
+        --divider-bg: linear-gradient(90deg, rgba(62,39,35,0.4), transparent);
         --hero-title: #3e2723;
         --tag-bg: #d7ccc8;
         --sidebar-heading: #3e2723;
@@ -291,6 +291,9 @@ def _inject_css() -> None:
         background: var(--btn-bg) !important; border: none !important; color: white !important;
         font-weight: 600 !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important; cursor: pointer !important;
     }}
+    .stButton > button p, .stButton > button span, .stButton > button div {{
+        color: white !important;
+    }}
     .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important; }}
     .stButton > button:active {{ transform: translateY(0px) scale(0.98) !important; opacity: 1 !important; }}
     .stButton > button:disabled {{ opacity: 0.65 !important; cursor: wait !important; }}
@@ -342,12 +345,12 @@ def _render_sidebar() -> dict:
         st.markdown("""
         <div style='text-align:center; padding: 1rem 0 0.5rem;'>
             <div style='font-size:2rem;'>🎯</div>
-            <div style='background: linear-gradient(135deg, #818cf8, #c084fc);
+            <div style='background: var(--hero-title);
                         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                         font-size:1.3rem; font-weight:800; letter-spacing:-0.5px;'>
                 CVision
             </div>
-            <div style='color:#475569; font-size:0.7rem; letter-spacing:1.5px;
+            <div style='color: var(--text-subtle); font-size:0.7rem; letter-spacing:1.5px;
                         text-transform:uppercase; margin-top:2px;'>
                 AI Resume Screening · Phase 1
             </div>
