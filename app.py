@@ -144,7 +144,8 @@ def _inject_css() -> None:
         --border-hover: rgba(62, 39, 35, 0.8);
         --card-bg: #ffffff;
         --input-bg: #ffffff;
-        --divider-bg: linear-gradient(90deg, rgba(62,39,35,0.8), rgba(62,39,35,0.1));
+        --divider-bg: #3e2723;
+        --divider-solid: #3e2723;
         --hero-title: #3e2723;
         --tag-bg: #d7ccc8;
         --sidebar-heading: #3e2723;
@@ -168,6 +169,7 @@ def _inject_css() -> None:
         --card-bg: rgba(255,255,255,0.03);
         --input-bg: rgba(255,255,255,0.03);
         --divider-bg: linear-gradient(90deg, rgba(99,102,241,0.3), transparent);
+        --divider-solid: rgba(99,102,241,0.4);
         --hero-title: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
         --tag-bg: rgba(99,102,241,0.12);
         --sidebar-heading: #a5b4fc;
@@ -285,7 +287,13 @@ def _inject_css() -> None:
     .score-bar-track {{ background: rgba(100,100,100,0.15); border-radius: 4px; height: 6px; overflow: hidden; }}
     .score-bar-fill {{ height: 100%; border-radius: 4px; background: var(--score-bar-fill); transition: width 0.6s ease; }}
 
-    .glass-divider {{ border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0; }}
+    hr, .glass-divider, [data-testid="stMarkdownContainer"] hr {{
+        border: none !important;
+        border-top: 2px solid var(--divider-solid) !important;
+        background-color: transparent !important;
+        margin: 1.5rem 0 !important;
+        opacity: 1 !important;
+    }}
 
     .stButton > button {{
         background: var(--btn-bg) !important; border: none !important; color: white !important;
