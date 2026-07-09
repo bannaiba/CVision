@@ -133,6 +133,10 @@ def load_embedding_model(model_name: str = DEFAULT_MODEL_NAME):
     """
     backend = ACTIVE_BACKEND
 
+    # Fix UI short-names for fastembed which requires full HuggingFace identifiers
+    if model_name == "all-MiniLM-L6-v2":
+        model_name = "sentence-transformers/all-MiniLM-L6-v2"
+
     if backend == "fastembed":
         try:
             from fastembed import TextEmbedding
