@@ -135,16 +135,16 @@ def _inject_css() -> None:
     
     if light_mode:
         theme_vars = """
-        --bg-gradient: linear-gradient(135deg, #efe5da 0%, #e3d5c8 100%);
-        --sidebar-bg: #ece2d7;
+        --bg-gradient: linear-gradient(135deg, #e6dace 0%, #d5c3b3 100%);
+        --sidebar-bg: #e1d2c2;
         --text-main: #3e2723;
         --text-muted: #5d4037;
         --text-subtle: #795548;
-        --border-color: rgba(62, 39, 35, 0.35);
-        --border-hover: rgba(62, 39, 35, 0.5);
+        --border-color: rgba(62, 39, 35, 0.6);
+        --border-hover: rgba(62, 39, 35, 0.8);
         --card-bg: #ffffff;
         --input-bg: #ffffff;
-        --divider-bg: linear-gradient(90deg, rgba(62,39,35,0.4), transparent);
+        --divider-bg: linear-gradient(90deg, rgba(62,39,35,0.8), rgba(62,39,35,0.1));
         --hero-title: #3e2723;
         --tag-bg: #d7ccc8;
         --sidebar-heading: #3e2723;
@@ -291,8 +291,12 @@ def _inject_css() -> None:
         background: var(--btn-bg) !important; border: none !important; color: white !important;
         font-weight: 600 !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important; cursor: pointer !important;
     }}
-    .stButton > button p, .stButton > button span, .stButton > button div {{
-        color: white !important;
+    div[data-testid="stButton"] button *,
+    div[data-testid="stButton"] button p,
+    div[data-testid="stButton"] button span,
+    div[data-testid="stButton"] button div {{
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }}
     .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important; }}
     .stButton > button:active {{ transform: translateY(0px) scale(0.98) !important; opacity: 1 !important; }}
