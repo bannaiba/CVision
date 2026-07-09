@@ -129,342 +129,158 @@ _scheduler = _init_scheduler()
 
 def _inject_css() -> None:
     """
-    Inject custom CSS for the premium dark glassmorphism theme.
-
-    Uses Streamlit's ``st.markdown(unsafe_allow_html=True)`` to embed a
-    ``<style>`` block. All selectors target Streamlit's internal class names
-    which are stable across Streamlit 1.35+.
+    Inject custom CSS for the premium glassmorphism theme (Light & Dark).
     """
-    st.markdown("""
+    light_mode = st.session_state.get("light_mode", False)
+    
+    if light_mode:
+        theme_vars = """
+        --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
+        --sidebar-bg: rgba(248, 250, 252, 0.97);
+        --text-main: #1e293b;
+        --text-muted: #475569;
+        --text-subtle: #64748b;
+        --border-color: rgba(99, 102, 241, 0.3);
+        --border-hover: rgba(99, 102, 241, 0.6);
+        --card-bg: rgba(255, 255, 255, 0.6);
+        --input-bg: rgba(255, 255, 255, 0.8);
+        --divider-bg: linear-gradient(90deg, rgba(99,102,241,0.5), transparent);
+        --hero-title: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #db2777 100%);
+        --tag-bg: rgba(99,102,241,0.15);
+        """
+    else:
+        theme_vars = """
+        --bg-gradient: linear-gradient(135deg, #0a0d18 0%, #10132a 50%, #0a0d18 100%);
+        --sidebar-bg: rgba(10, 13, 24, 0.97);
+        --text-main: #e2e8f0;
+        --text-muted: #94a3b8;
+        --text-subtle: #64748b;
+        --border-color: rgba(99, 102, 241, 0.2);
+        --border-hover: rgba(99, 102, 241, 0.5);
+        --card-bg: rgba(255,255,255,0.03);
+        --input-bg: rgba(255,255,255,0.03);
+        --divider-bg: linear-gradient(90deg, rgba(99,102,241,0.3), transparent);
+        --hero-title: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
+        --tag-bg: rgba(99,102,241,0.12);
+        """
+
+    st.markdown(f"""
     <style>
-    /* ── Google Font ─────────────────────────────────────────────────────── */
+    :root {{
+        {theme_vars}
+    }}
+    
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-    html, body, [class*="css"], .stMarkdown, .stTextArea, .stTextInput {
+    html, body, [class*="css"], .stMarkdown, .stTextArea, .stTextInput, .stSelectbox {{
         font-family: 'Inter', sans-serif !important;
-    }
+        color: var(--text-main) !important;
+    }}
+    
+    .stApp > header {{
+        background-color: transparent !important;
+    }}
 
-    /* ── App background ──────────────────────────────────────────────────── */
-    .stApp {
-        background: linear-gradient(135deg, #0a0d18 0%, #10132a 50%, #0a0d18 100%);
-    }
+    .stApp {{
+        background: var(--bg-gradient) !important;
+        color: var(--text-main) !important;
+    }}
 
-    /* ── PREVENT GREY-OUT during Streamlit reruns ────────────────────────── */
-    [data-testid="stAppViewContainer"] > .block-container {
-        opacity: 1 !important;
-    }
-    .stApp > div[data-testid="stAppViewContainer"] {
-        opacity: 1 !important;
-        pointer-events: auto !important;
-    }
-    /* Kill Streamlit's built-in skeleton/loading overlay */
-    .stApp [data-testid="stAppViewContainer"]::before,
-    .stApp [data-testid="stAppViewContainer"]::after {
-        display: none !important;
-    }
-    /* Remove the faded overlay on stale elements */
-    .element-container, .stMarkdown, .stAlert, .stButton,
-    [data-testid="stVerticalBlock"], [data-testid="column"] {
-        opacity: 1 !important;
-        transition: none !important;
-    }
-    /* Ensure sidebar never fades */
-    [data-testid="stSidebar"] * {
-        opacity: 1 !important;
-    }
-    /* Hide toolbar menu items but keep sidebar toggle arrow visible */
-    [data-testid="stToolbar"] [data-testid="stFileUploaderDropzone"] {
-        display: none !important;
-    }
-    /* Hide the built-in "running" status bar at the top */
-    .stStatusWidget, [data-testid="stStatusWidget"] {
-        display: none !important;
-    }
+    [data-testid="stAppViewContainer"] > .block-container {{ opacity: 1 !important; }}
+    .stApp > div[data-testid="stAppViewContainer"] {{ opacity: 1 !important; pointer-events: auto !important; }}
+    .stApp [data-testid="stAppViewContainer"]::before, .stApp [data-testid="stAppViewContainer"]::after {{ display: none !important; }}
+    .element-container, .stMarkdown, .stAlert, .stButton, [data-testid="stVerticalBlock"], [data-testid="column"] {{ opacity: 1 !important; transition: none !important; }}
+    [data-testid="stSidebar"] * {{ opacity: 1 !important; }}
+    [data-testid="stToolbar"] [data-testid="stFileUploaderDropzone"] {{ display: none !important; }}
+    .stStatusWidget, [data-testid="stStatusWidget"] {{ display: none !important; }}
 
-    /* ── Custom animated spinner ─────────────────────────────────────────── */
-    @keyframes cvision-spin {
-        0%   { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    @keyframes cvision-pulse {
-        0%, 100% { opacity: 0.7; }
-        50%      { opacity: 1; }
-    }
-    /* Override Streamlit's default spinner to use our animation */
-    [data-testid="stSpinner"] > div {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-    }
-    [data-testid="stSpinner"] > div > svg,
-    [data-testid="stSpinner"] > div > i {
-        animation: cvision-spin 1s linear infinite !important;
-    }
-    [data-testid="stSpinner"] > div > span,
-    [data-testid="stSpinner"] > div > p {
-        animation: cvision-pulse 1.5s ease-in-out infinite !important;
-        color: #a5b4fc !important;
-        font-weight: 500 !important;
-    }
+    @keyframes cvision-spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
+    @keyframes cvision-pulse {{ 0%, 100% {{ opacity: 0.7; }} 50% {{ opacity: 1; }} }}
+    
+    [data-testid="stSpinner"] > div {{ display: flex !important; align-items: center !important; gap: 12px !important; }}
+    [data-testid="stSpinner"] > div > svg, [data-testid="stSpinner"] > div > i {{ animation: cvision-spin 1s linear infinite !important; }}
+    [data-testid="stSpinner"] > div > span, [data-testid="stSpinner"] > div > p {{ animation: cvision-pulse 1.5s ease-in-out infinite !important; color: #a5b4fc !important; font-weight: 500 !important; }}
 
-    /* ── Sidebar ─────────────────────────────────────────────────────────── */
-    [data-testid="stSidebar"] {
-        background: rgba(10, 13, 24, 0.97) !important;
-        border-right: 1px solid rgba(99, 102, 241, 0.2) !important;
-    }
-    [data-testid="stSidebar"] .stMarkdown h3 {
-        color: #a5b4fc;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-weight: 600;
-    }
+    [data-testid="stSidebar"] {{
+        background: var(--sidebar-bg) !important;
+        border-right: 1px solid var(--border-color) !important;
+    }}
+    [data-testid="stSidebar"] .stMarkdown h3 {{
+        color: #a5b4fc; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;
+    }}
 
-    /* ── Main header ─────────────────────────────────────────────────────── */
-    .hero-container {
-        text-align: center;
-        padding: 2rem 0 1rem;
-    }
-    .hero-title {
-        background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-size: 3.2rem;
-        font-weight: 800;
-        letter-spacing: -1.5px;
-        line-height: 1.1;
-        margin: 0;
-    }
-    .hero-subtitle {
-        color: #64748b;
-        font-size: 1rem;
-        margin-top: 0.5rem;
-        font-weight: 400;
-        letter-spacing: 0.5px;
-    }
-    .hero-badge {
-        display: inline-block;
-        background: rgba(99,102,241,0.15);
-        border: 1px solid rgba(99,102,241,0.35);
-        color: #818cf8;
-        border-radius: 20px;
-        padding: 4px 14px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-top: 0.75rem;
-        letter-spacing: 0.5px;
-    }
+    .hero-container {{ text-align: center; padding: 2rem 0 1rem; }}
+    .hero-title {{
+        background: var(--hero-title);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        font-size: 3.2rem; font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; margin: 0;
+    }}
+    .hero-subtitle {{ color: var(--text-subtle); font-size: 1rem; margin-top: 0.5rem; font-weight: 400; letter-spacing: 0.5px; }}
+    .hero-badge {{
+        display: inline-block; background: var(--tag-bg); border: 1px solid var(--border-color);
+        color: #818cf8; border-radius: 20px; padding: 4px 14px; font-size: 0.75rem; font-weight: 500; margin-top: 0.75rem; letter-spacing: 0.5px;
+    }}
 
-    /* ── Step labels ──────────────────────────────────────────────────────── */
-    .step-label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 0.5rem;
-    }
-    .step-number {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: white;
-        font-size: 0.75rem;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-    .step-title {
-        color: #e2e8f0;
-        font-size: 1rem;
-        font-weight: 600;
-    }
+    .step-label {{ display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem; }}
+    .step-number {{
+        display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+        border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+    }}
+    .step-title {{ color: var(--text-main); font-size: 1rem; font-weight: 600; }}
 
-    /* ── KPI cards ────────────────────────────────────────────────────────── */
-    .kpi-card {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(99,102,241,0.2);
-        border-radius: 16px;
-        padding: 20px 16px;
-        text-align: center;
-        transition: border-color 0.25s ease, transform 0.25s ease;
-    }
-    .kpi-card:hover {
-        border-color: rgba(99,102,241,0.5);
-        transform: translateY(-2px);
-    }
-    .kpi-value {
-        font-size: 2rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #818cf8, #c084fc);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        line-height: 1.1;
-    }
-    .kpi-label {
-        color: #64748b;
-        font-size: 0.75rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 4px;
-    }
-    .kpi-sub {
-        color: #475569;
-        font-size: 0.7rem;
-        margin-top: 2px;
-    }
+    .kpi-card {{
+        background: var(--card-bg); border: 1px solid var(--border-color);
+        border-radius: 16px; padding: 20px 16px; text-align: center; transition: border-color 0.25s ease, transform 0.25s ease;
+    }}
+    .kpi-card:hover {{ border-color: var(--border-hover); transform: translateY(-2px); }}
+    .kpi-value {{
+        font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #818cf8, #c084fc);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1;
+    }}
+    .kpi-label {{ color: var(--text-subtle); font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }}
+    .kpi-sub {{ color: var(--text-muted); font-size: 0.7rem; margin-top: 2px; }}
 
-    /* ── Section headings ─────────────────────────────────────────────────── */
-    .section-heading {
-        color: #e2e8f0;
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin: 1.5rem 0 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .section-heading::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: linear-gradient(90deg, rgba(99,102,241,0.3), transparent);
-    }
+    .section-heading {{ color: var(--text-main); font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 0.75rem; display: flex; align-items: center; gap: 8px; }}
+    .section-heading::after {{ content: ''; flex: 1; height: 1px; background: var(--divider-bg); }}
 
-    /* ── Skill tags ───────────────────────────────────────────────────────── */
-    .skill-tag {
-        display: inline-block;
-        background: rgba(99,102,241,0.12);
-        border: 1px solid rgba(99,102,241,0.3);
-        color: #a5b4fc;
-        border-radius: 20px;
-        padding: 3px 12px;
-        font-size: 0.72rem;
-        font-weight: 500;
-        margin: 2px 3px;
-        white-space: nowrap;
-        transition: background 0.2s ease;
-    }
-    .skill-tag:hover {
-        background: rgba(99,102,241,0.25);
-    }
+    .skill-tag {{
+        display: inline-block; background: var(--tag-bg); border: 1px solid var(--border-color);
+        color: #6366f1; border-radius: 20px; padding: 3px 12px; font-size: 0.72rem; font-weight: 600; margin: 2px 3px; white-space: nowrap; transition: background 0.2s ease;
+    }}
+    .skill-tag:hover {{ background: rgba(99,102,241,0.25); }}
 
-    /* ── Candidate rank badge ─────────────────────────────────────────────── */
-    .rank-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: white;
-        font-weight: 700;
-        font-size: 0.8rem;
-    }
+    .rank-badge {{
+        display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+        border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-weight: 700; font-size: 0.8rem;
+    }}
 
-    /* ── Filter status badges ─────────────────────────────────────────────── */
-    .badge-pass {
-        display: inline-block;
-        background: rgba(16,185,129,0.12);
-        border: 1px solid rgba(16,185,129,0.35);
-        color: #34d399;
-        border-radius: 12px;
-        padding: 2px 10px;
-        font-size: 0.72rem;
-        font-weight: 600;
-    }
-    .badge-fail {
-        display: inline-block;
-        background: rgba(239,68,68,0.12);
-        border: 1px solid rgba(239,68,68,0.35);
-        color: #f87171;
-        border-radius: 12px;
-        padding: 2px 10px;
-        font-size: 0.72rem;
-        font-weight: 600;
-    }
+    .badge-pass {{ display: inline-block; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: #059669; border-radius: 12px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }}
+    .badge-fail {{ display: inline-block; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #dc2626; border-radius: 12px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }}
 
-    /* ── Score bar ────────────────────────────────────────────────────────── */
-    .score-bar-track {
-        background: rgba(255,255,255,0.06);
-        border-radius: 4px;
-        height: 6px;
-        overflow: hidden;
-    }
-    .score-bar-fill {
-        height: 100%;
-        border-radius: 4px;
-        background: linear-gradient(90deg, #6366f1, #c084fc);
-        transition: width 0.6s ease;
-    }
+    .score-bar-track {{ background: rgba(100,100,100,0.15); border-radius: 4px; height: 6px; overflow: hidden; }}
+    .score-bar-fill {{ height: 100%; border-radius: 4px; background: linear-gradient(90deg, #6366f1, #c084fc); transition: width 0.6s ease; }}
 
-    /* ── Dividers ─────────────────────────────────────────────────────────── */
-    .glass-divider {
-        border: none;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        margin: 1.5rem 0;
-    }
+    .glass-divider {{ border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0; }}
 
-    /* ── Streamlit widget overrides ───────────────────────────────────────── */
-    .stButton > button {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-        border: none !important;
-        color: white !important;
-        font-weight: 600 !important;
-        border-radius: 10px !important;
-        padding: 0.6rem 1.5rem !important;
-        transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
-        cursor: pointer !important;
-    }
-    .stButton > button:hover {
-        opacity: 0.92 !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important;
-    }
-    .stButton > button:active {
-        transform: translateY(0px) scale(0.98) !important;
-        opacity: 1 !important;
-    }
-    /* Prevent buttons from greying out while Streamlit re-runs */
-    .stButton > button:disabled {
-        opacity: 0.65 !important;
-        cursor: wait !important;
-    }
+    .stButton > button {{
+        background: linear-gradient(135deg, #6366f1, #8b5cf6) !important; border: none !important; color: white !important;
+        font-weight: 600 !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important; cursor: pointer !important;
+    }}
+    .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important; }}
+    .stButton > button:active {{ transform: translateY(0px) scale(0.98) !important; opacity: 1 !important; }}
+    .stButton > button:disabled {{ opacity: 0.65 !important; cursor: wait !important; }}
 
-    .stTextArea textarea, .stTextInput input {
-        background: rgba(255,255,255,0.03) !important;
-        border: 1px solid rgba(99,102,241,0.25) !important;
-        color: #e2e8f0 !important;
-        border-radius: 10px !important;
-    }
-    .stTextArea textarea:focus, .stTextInput input:focus {
-        border-color: rgba(99,102,241,0.6) !important;
-        box-shadow: 0 0 0 2px rgba(99,102,241,0.15) !important;
-    }
+    .stTextArea textarea, .stTextInput input, .stSelectbox > div > div {{
+        background: var(--input-bg) !important; border: 1px solid var(--border-color) !important; color: var(--text-main) !important; border-radius: 10px !important;
+    }}
+    .stTextArea textarea:focus, .stTextInput input:focus, .stSelectbox > div > div:focus {{
+        border-color: var(--border-hover) !important; box-shadow: 0 0 0 2px rgba(99,102,241,0.15) !important;
+    }}
+    .stSelectbox ul {{ background: var(--sidebar-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-color) !important; }}
 
-    /* ── Expander ─────────────────────────────────────────────────────────── */
-    [data-testid="stExpander"] {
-        border: 1px solid rgba(99,102,241,0.15) !important;
-        border-radius: 12px !important;
-        background: rgba(255,255,255,0.02) !important;
-    }
-
-    /* ── Success / Warning / Error boxes ─────────────────────────────────── */
-    .stAlert {
-        border-radius: 10px !important;
-    }
-
-    /* ── Dataframe table overrides ────────────────────────────────────────── */
-    [data-testid="stDataFrame"] {
-        border: 1px solid rgba(99,102,241,0.2) !important;
-        border-radius: 12px !important;
-        overflow: hidden !important;
-    }
+    [data-testid="stExpander"] {{ border: 1px solid var(--border-color) !important; border-radius: 12px !important; background: var(--card-bg) !important; }}
+    .stAlert {{ border-radius: 10px !important; }}
+    [data-testid="stDataFrame"] {{ border: 1px solid var(--border-color) !important; border-radius: 12px !important; overflow: hidden !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -627,7 +443,17 @@ def _render_sidebar() -> dict:
 
         st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
 
-        # ── Position & Company ─────────────────────────────────────────────────
+        # ── Generative AI Model ──────────────────────────────────────────────
+        st.markdown("### 🤖 Generative AI Model")
+        ai_model = st.selectbox(
+            "Chatbot Intelligence",
+            options=["gemini-2.5-flash", "gemini-2.5-pro"],
+            index=0,
+            key="ai_model_select",
+            help="Flash is incredibly fast. Pro is highly intelligent and deep-thinking.",
+        )
+        
+        st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
         st.markdown("### 🏢 Organization")
         position_name = st.text_input(
             "Position Title",
@@ -655,6 +481,16 @@ def _render_sidebar() -> dict:
 
         st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
 
+        # ── Theme Toggle ───────────────────────────────────────────────────────
+        st.toggle(
+            "☀️ Light Mode",
+            value=st.session_state.get("light_mode", False),
+            key="light_mode",
+            help="Switch to a bright, readable glassmorphism theme.",
+        )
+        
+        st.markdown("<hr class='glass-divider'>", unsafe_allow_html=True)
+
         # ── Help link ──────────────────────────────────────────────────────────
         st.caption("📋 See `GOOGLE_FORM_SPEC.md` for form setup & Service Account guide.")
 
@@ -665,7 +501,8 @@ def _render_sidebar() -> dict:
         "folder_path":      folder_path,
         "min_cgpa":         min_cgpa,
         "min_years_exp":    float(min_years_exp),
-        "model_name":       "all-MiniLM-L6-v2",
+        "model_name":       "all-MiniLM-L6-v2", # Fixed embedding model
+        "ai_model":         ai_model,
         "position_name":    position_name,
         "company_name":     company_name,
         "auto_email":       auto_email,

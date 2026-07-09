@@ -132,10 +132,10 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
                 })
         return {"candidates": found, "not_found": missing}
 
-    def search_by_skill(skill: str) -> dict:
-        """Return all candidates whose resume mentions the given skill or keyword."""
-        matches = [c.name for c in candidates if skill.lower() in c.resume_markdown.lower()]
-        return {"skill": skill, "matches": matches, "count": len(matches)}
+    def search_resumes_by_keyword(keyword: str) -> dict:
+        """Return all candidates whose full resume text mentions the given keyword, skill, or degree (e.g. 'CFA', 'Python')."""
+        matches = [c.name for c in candidates if keyword.lower() in c.resume_markdown.lower()]
+        return {"keyword": keyword, "matches": matches, "count": len(matches)}
 
     def get_filtered_candidates() -> dict:
         """Return candidates who were rejected by the knockout filters, with reasons."""
@@ -215,11 +215,11 @@ def build_agent_tools(candidates: list, filtered: list, results_df: pd.DataFrame
         except Exception as e:
             return {"error": str(e)}
 
-    return [get_all_candidates_summary, get_candidate_details, compare_candidates, search_by_skill, get_filtered_candidates, send_decision_emails, export_results_to_google_sheet]
+    return [get_all_candidates_summary, get_candidate_details, compare_candidates, search_resumes_by_keyword, get_filtered_candidates, send_decision_emails, export_results_to_google_sheet]
 
 # ── System Prompt Builder ─────────────────────────────────────────────────────
 
-def build_system_prompt(results_df: pd.DataFrame, job_description: str) -> str:
+def build_system_prompt(results_df, job_description: str) -> str:
     """Build a compact system prompt containing only rankings and core metrics."""
     prompt_parts = [
         "# ROLE: Expert HR Screening Assistant for CVision",
@@ -234,6 +234,11 @@ def build_system_prompt(results_df: pd.DataFrame, job_description: str) -> str:
         "- Do not guess candidate details if they are not in the table below. Call the tool.",
         "- If the user asks to send emails, CALL the relevant tool with user_confirmed=False first. If they already said yes, call it with user_confirmed=True.",
         "- If the user asks to export to database, CALL the export tool immediately.",
+        "",
+        "CRITICAL RULES:",
+        "1. By default, the summary table below only provides high-level metrics (CGPA, rank, top skills). It DOES NOT contain full details like specific degrees, past companies, or granular skills.",
+        "2. If the user asks for specific details not found in the summary (e.g. 'who has a CFA degree', 'who worked at Google'), you MUST use the search_resumes_by_keyword tool or get_candidate_details to scan the full CVs.",
+        "3. If a tool returns an error, apologize and explain what went wrong.",
         "",
         "---",
         "# JOB DESCRIPTION",
@@ -270,9 +275,10 @@ def build_system_prompt(results_df: pd.DataFrame, job_description: str) -> str:
 
 def chat_with_assistant(
     user_message: str,
-    chat_history: list[dict],
+    chat_history: list,
     system_prompt: str,
-    tools: list
+    tools: list,
+    model_name: str = "gemini-2.5-flash"
 ) -> tuple[str, list]:
     from google.genai import types
     client = _get_gemini_client()
@@ -308,7 +314,7 @@ def chat_with_assistant(
     from google.genai.errors import APIError
 
     try:
-        response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
+        response = client.models.generate_content(model=model_name, contents=contents, config=config)
 
         max_hops = 3
         hops = 0
@@ -337,7 +343,7 @@ def chat_with_assistant(
             # Append all function responses in a single turn to support parallel tool calling
             contents.append(types.Content(role="user", parts=function_responses))
 
-            response = client.models.generate_content(model="gemini-2.5-flash", contents=contents, config=config)
+            response = client.models.generate_content(model=model_name, contents=contents, config=config)
             hops += 1
 
         # Check if response.text raises ValueError (no text parts) or is empty
