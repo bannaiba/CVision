@@ -103,10 +103,28 @@ def _get_smtp_config() -> dict:
     Raises:
         ValueError: If required SMTP_EMAIL or SMTP_APP_PASSWORD are not set.
     """
-    email = os.getenv("SMTP_EMAIL", "").strip()
-    password = os.getenv("SMTP_APP_PASSWORD", "").strip()
-    host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
-    port = int(os.getenv("SMTP_PORT", "465"))
+    email = ""
+    password = ""
+    host = "smtp.gmail.com"
+    port = 465
+    
+    try:
+        import streamlit as st
+        email = st.secrets.get("SMTP_EMAIL", "").strip()
+        password = st.secrets.get("SMTP_APP_PASSWORD", "").strip()
+        host = st.secrets.get("SMTP_HOST", "smtp.gmail.com").strip()
+        port = int(st.secrets.get("SMTP_PORT", 465))
+    except Exception:
+        pass
+
+    if not email:
+        email = os.getenv("SMTP_EMAIL", "").strip()
+    if not password:
+        password = os.getenv("SMTP_APP_PASSWORD", "").strip()
+    if os.getenv("SMTP_HOST"):
+        host = os.getenv("SMTP_HOST").strip()
+    if os.getenv("SMTP_PORT"):
+        port = int(os.getenv("SMTP_PORT"))
 
     if not email or not password:
         raise ValueError(
