@@ -135,26 +135,26 @@ def _inject_css() -> None:
     
     if light_mode:
         theme_vars = """
-        --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        --sidebar-bg: #f8fafc;
-        --text-main: #020617;
-        --text-muted: #1e293b;
-        --text-subtle: #334155;
-        --border-color: rgba(15, 23, 42, 0.2);
-        --border-hover: rgba(15, 23, 42, 0.4);
+        --bg-gradient: linear-gradient(135deg, #fdf8f5 0%, #f3ede8 100%);
+        --sidebar-bg: #f8f3ee;
+        --text-main: #3e2723;
+        --text-muted: #5d4037;
+        --text-subtle: #795548;
+        --border-color: rgba(62, 39, 35, 0.2);
+        --border-hover: rgba(62, 39, 35, 0.4);
         --card-bg: #ffffff;
         --input-bg: #ffffff;
-        --divider-bg: linear-gradient(90deg, rgba(15,23,42,0.15), transparent);
-        --hero-title: #020617;
-        --tag-bg: #e2e8f0;
-        --sidebar-heading: #020617;
-        --hero-badge-text: #020617;
-        --skill-tag-text: #020617;
-        --step-number-bg: #0f172a;
-        --rank-badge-bg: #0f172a;
-        --score-bar-fill: #0f172a;
-        --kpi-value: #020617;
-        --btn-bg: #0f172a;
+        --divider-bg: linear-gradient(90deg, rgba(62,39,35,0.15), transparent);
+        --hero-title: #3e2723;
+        --tag-bg: #d7ccc8;
+        --sidebar-heading: #3e2723;
+        --hero-badge-text: #3e2723;
+        --skill-tag-text: #3e2723;
+        --step-number-bg: #4e342e;
+        --rank-badge-bg: #4e342e;
+        --score-bar-fill: #4e342e;
+        --kpi-value: #3e2723;
+        --btn-bg: #4e342e;
         """
     else:
         theme_vars = """
