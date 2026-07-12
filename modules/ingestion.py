@@ -943,3 +943,38 @@ def export_results_to_sheet(sheet_id: str, credentials_path: str, results_df: pd
         worksheet = sheet.add_worksheet(title=worksheet_title, rows=max(100, len(data) + 10), cols=max(20, len(export_df.columns) + 5))
 
     worksheet.update(values=data, range_name="A1")
+
+def export_chat_to_sheet(credentials_path: str, chat_messages: list, tab_name: str = "CVision Chat Logs") -> None:
+    """
+    Appends the current chat transcript to a dedicated tab in the Google Sheet.
+    """
+    from datetime import datetime, timezone, timedelta
+    import gspread
+    
+    if not chat_messages:
+        return
+        
+    client = _get_gspread_client(credentials_path, readonly=False)
+    sheet = client.open_by_key("1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ")
+    
+    try:
+        worksheet = sheet.worksheet(tab_name)
+    except gspread.exceptions.WorksheetNotFound:
+        worksheet = sheet.add_worksheet(title=tab_name, rows=1000, cols=5)
+        worksheet.append_row(["Timestamp", "Chat Transcript"])
+        
+    bst_tz = timezone(timedelta(hours=6))
+    timestamp_str = datetime.now(bst_tz).strftime("%Y-%m-%d %H:%M:%S")
+    
+    transcript_lines = []
+    for msg in chat_messages:
+        role = msg.get("role", "unknown").upper()
+        content = msg.get("content", "")
+        if role == "USER":
+            transcript_lines.append(f"👤 [USER]:\n{content}")
+        else:
+            transcript_lines.append(f"🤖 [AGENT]:\n{content}")
+            
+    full_transcript = "\n\n---\n\n".join(transcript_lines)
+    
+    worksheet.append_row([timestamp_str, full_transcript])
