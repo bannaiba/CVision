@@ -942,17 +942,21 @@ def _render_chatbot(
         # Build tools bound to current session data
         tools = build_agent_tools(candidates, filtered, results_df)
 
-        # Get LLM response
+        # Get LLM response — use st.empty() to prevent DOM recycling glitch
         with st.chat_message("assistant"):
+            placeholder = st.empty()
+            placeholder.markdown("⏳")
             try:
-                with st.spinner("Thinking..."):
-                    response, trace = chat_with_assistant(
-                        user_message=user_input,
-                        chat_history=st.session_state.get("chat_history", []),
-                        system_prompt=st.session_state["chatbot_system_prompt"],
-                        tools=tools,
-                        model_name=st.session_state.get("ai_model_select", "gemini-2.5-flash"),
-                    )
+                response, trace = chat_with_assistant(
+                    user_message=user_input,
+                    chat_history=st.session_state.get("chat_history", []),
+                    system_prompt=st.session_state["chatbot_system_prompt"],
+                    tools=tools,
+                    model_name=st.session_state.get("ai_model_select", "gemini-2.5-flash"),
+                )
+                
+                # Clear the placeholder before rendering the real response
+                placeholder.empty()
                     
                 if trace:
                     with st.expander(f"🔧 Agent used {len(trace)} tool call(s)", expanded=False):
@@ -967,6 +971,7 @@ def _render_chatbot(
                     {"role": "model", "parts": [response]},
                 ])
             except Exception as exc:
+                placeholder.empty()
                 st.error(f"❌ Chatbot error: {exc}")
                 logger.error("Chatbot error: %s", exc)
 
