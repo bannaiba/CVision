@@ -575,7 +575,7 @@ def _render_kpi_row(stats: dict, n_filtered: int, n_total: int) -> None:
         (c1, f"{stats['top_score']:.1f}%",   "Top Fit Score",      "Best matched candidate"),
         (c2, f"{stats['avg_score']:.1f}%",   "Average Score",       f"Std dev: {stats['score_std']:.1f}%"),
         (c3, str(stats["n_candidates"]),      "Candidates Ranked",  f"{n_filtered} filtered out"),
-        (c4, str(stats["above_70"]),          "Strong Matches",      "Score ≥ 70%"),
+        (c4, str(stats["above_50"]),          "Strong Matches",      "Score ≥ 50%"),
     ]
     for col, value, label, sub in cards:
         with col:
@@ -614,7 +614,7 @@ def _render_score_chart(results_df: pd.DataFrame) -> None:
 
     # Color-code bars by score tier
     colors = [
-        "#10b981" if s >= 70 else "#6366f1" if s >= 50 else "#475569"
+        "#10b981" if s >= 50 else "#6366f1" if s >= 30 else "#475569"
         for s in scores
     ]
 
@@ -652,12 +652,12 @@ def _render_score_chart(results_df: pd.DataFrame) -> None:
         showlegend=False,
     )
 
-    # Add a vertical reference line at 70% (strong match threshold)
+    # Add a vertical reference line at 50% (strong match threshold)
     fig.add_vline(
-        x=70,
+        x=50,
         line_dash="dot",
         line_color="rgba(16,185,129,0.4)",
-        annotation_text="Strong (70%)",
+        annotation_text="Strong (50%)",
         annotation_position="top right",
         annotation_font=dict(color="#34d399", size=11),
     )
@@ -680,9 +680,9 @@ def _render_ranked_table(results_df: pd.DataFrame) -> None:
 
     def _color_score(val: float) -> str:
         """Return a CSS color string for a given score value."""
-        if val >= 70:
+        if val >= 50:
             return "color: #34d399; font-weight: 700;"
-        elif val >= 50:
+        elif val >= 30:
             return "color: #818cf8; font-weight: 600;"
         else:
             return "color: #64748b;"
@@ -819,14 +819,23 @@ def _render_candidate_details(
                         meta_items.append(("📱 Phone", record.phone))
 
                     if meta_items:
-                        for label, value in meta_items:
-                            st.markdown(
+                        rc1, rc2 = st.columns(2)
+                        
+                        def _render_meta_item(label, value):
+                            return (
                                 f"<div style='margin-bottom:6px;'>"
                                 f"<span style='color:#64748b;font-size:0.72rem;'>{label}</span><br>"
                                 f"<span style='color:#e2e8f0;font-size:0.85rem;font-weight:500;'>{value}</span>"
-                                f"</div>",
-                                unsafe_allow_html=True,
+                                f"</div>"
                             )
+
+                        with rc1:
+                            for label, value in meta_items[:3]:
+                                st.markdown(_render_meta_item(label, value), unsafe_allow_html=True)
+                        
+                        with rc2:
+                            for label, value in meta_items[3:]:
+                                st.markdown(_render_meta_item(label, value), unsafe_allow_html=True)
                     else:
                         st.markdown(
                             "<span style='color:#475569; font-size:0.8rem;'>"
