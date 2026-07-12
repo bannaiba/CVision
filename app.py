@@ -944,8 +944,8 @@ def _render_chatbot(
 
         # Get LLM response
         with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                try:
+            try:
+                with st.spinner("Thinking..."):
                     response, trace = chat_with_assistant(
                         user_message=user_input,
                         chat_history=st.session_state.get("chat_history", []),
@@ -954,23 +954,21 @@ def _render_chatbot(
                         model_name=st.session_state.get("ai_model_select", "gemini-2.5-flash"),
                     )
                     
-                    if trace:
-                        with st.expander(f"🔧 Agent used {len(trace)} tool call(s)", expanded=False):
-                            for t in trace:
-                                st.code(f"{t['tool']}({t['args']}) → {t['result']}", language="json")
-                                
-                    st.markdown(response)
+                if trace:
+                    with st.expander(f"🔧 Agent used {len(trace)} tool call(s)", expanded=False):
+                        for t in trace:
+                            st.code(f"{t['tool']}({t['args']}) → {t['result']}", language="json")
+                            
+                st.markdown(response)
 
-                    # Update chat history
-                    # We store the raw texts in chat_history, but for proper tool tracking across 
-                    # multiple turns we'd store the rich types. For this demo, simple text is okay.
-                    st.session_state.setdefault("chat_history", []).extend([
-                        {"role": "user", "parts": [user_input]},
-                        {"role": "model", "parts": [response]},
-                    ])
-                except Exception as exc:
-                    st.error(f"❌ Chatbot error: {exc}")
-                    logger.error("Chatbot error: %s", exc)
+                # Update chat history
+                st.session_state.setdefault("chat_history", []).extend([
+                    {"role": "user", "parts": [user_input]},
+                    {"role": "model", "parts": [response]},
+                ])
+            except Exception as exc:
+                st.error(f"❌ Chatbot error: {exc}")
+                logger.error("Chatbot error: %s", exc)
 
 
 # ── Candidate Selection & Email Dispatch ──────────────────────────────────────
