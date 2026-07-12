@@ -1175,7 +1175,7 @@ def _render_candidate_selection(
                     creds_path = st.session_state.get("credentials_path", "credentials.json")
                     export_chat_to_sheet(
                         credentials_path=creds_path,
-                        chat_messages=st.session_state.get("chat_messages", [])
+                        chat_messages=st.session_state.get("chat_history", [])
                     )
                     st.toast("✅ Chat transcript successfully saved!", icon="💬")
                     st.success("✅ Chat transcript successfully saved!")

@@ -952,7 +952,7 @@ def export_chat_to_sheet(credentials_path: str, chat_messages: list, tab_name: s
     import gspread
     
     if not chat_messages:
-        return
+        raise ValueError("No chat history found. The transcript is empty.")
         
     client = _get_gspread_client(credentials_path, readonly=False)
     sheet = client.open_by_key("1NJurIfA-q9J5ifr_cc7KQJH8L9xQjbwhQdH2_nUp7gQ")
@@ -969,7 +969,8 @@ def export_chat_to_sheet(credentials_path: str, chat_messages: list, tab_name: s
     transcript_lines = []
     for msg in chat_messages:
         role = msg.get("role", "unknown").upper()
-        content = msg.get("content", "")
+        parts = msg.get("parts", [""])
+        content = parts[0] if parts else ""
         if role == "USER":
             transcript_lines.append(f"👤 [USER]:\n{content}")
         else:
